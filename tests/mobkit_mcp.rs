@@ -29,13 +29,16 @@ use meerkat_mobkit::{
     },
     mob_composition_manifest::persistent_mob_storage,
 };
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
-    collections::BTreeMap,
-    path::Path,
+    collections::{BTreeMap, BTreeSet},
+    hash::{DefaultHasher, Hash, Hasher},
+    path::{Path, PathBuf},
     pin::Pin,
+    process::Stdio,
     sync::{
-        Arc, Mutex,
+        Arc, Mutex, OnceLock,
         atomic::{AtomicUsize, Ordering},
     },
     time::{Duration, Instant},
@@ -45,6 +48,13 @@ const TURN_TIMEOUT: Duration = Duration::from_secs(45);
 const CATALOG_TIMEOUT: Duration = Duration::from_secs(20);
 const CATALOG_BACKOFF: Duration = Duration::from_millis(250);
 static CALL_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
+static CALL_NAMESPACE: OnceLock<String> = OnceLock::new();
+
+fn test_nonce() -> String {
+    let mut bytes = [0_u8; 16];
+    getrandom::fill(&mut bytes).unwrap();
+    format!("{:032x}", u128::from_le_bytes(bytes))
+}
 
 #[derive(Clone, Default)]
 enum CatalogStep {
@@ -79,10 +89,11 @@ struct ScriptClient {
 
 impl ScriptClient {
     fn plan(&self, tool: &str, arguments: Value, expects_botus: bool) -> String {
-        // A fresh client after restart must not reuse a tool-use id already
-        // present in the persisted model history.
+        // A fresh process must not reuse a tool-use id already present in the
+        // persisted model history, even if the OS eventually reuses its PID.
         let id = format!(
-            "botus-acceptance-{}",
+            "botus-acceptance-{}-{}",
+            CALL_NAMESPACE.get_or_init(test_nonce),
             CALL_SEQUENCE.fetch_add(1, Ordering::SeqCst)
         );
         let marker = format!("BOTUS_ACCEPTANCE[{id}]END");
@@ -603,7 +614,7 @@ fn assert_clean_shutdown(shutdown: &UnifiedRuntimeShutdownReport) {
         "incomplete shutdown: {shutdown:?}"
     );
     // cleanup_completed deliberately excludes terminal supervisor teardown.
-    // Same-process reopen also requires that exact route to be released.
+    // A completed phase must also release the exact supervisor route.
     match &shutdown.mob_terminal_shutdown {
         MobTerminalShutdownOutcome::Completed(report) => {
             assert!(
@@ -1011,11 +1022,194 @@ fn relay_setting(config: &McpServerConfig, key: &str) -> String {
     stdio.env[key].clone()
 }
 
+const RESTART_HELPER: &str = "native_mcp_restart_process_fixture";
+const RESTART_PROCESS_TIMEOUT: Duration = Duration::from_secs(240);
+const RESTART_OUTPUT_LIMIT: u64 = 64 * 1024;
+
+/// Assertion evidence only. These facts are compared with restored runtime
+/// authority; they are never supplied to a resolver, provider, or agent build.
+#[derive(Debug, Serialize, Deserialize)]
+struct RestartEvidence {
+    public: McpServerConfig,
+    owner: Principal,
+    fork: Principal,
+    owner_session: SessionId,
+    fork_session: SessionId,
+    creation: Value,
+    id: Value,
+    revision: Value,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct RestartCompletion {
+    run: String,
+    phase: String,
+    process_id: u32,
+    evidence: RestartEvidence,
+    // A one-way comparison of a high-entropy credential, never an auth input.
+    // No endpoint or credential value crosses the process boundary.
+    credential_fingerprint: Option<u64>,
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn native_mcp_restart_rebinds_transport_preserves_acl_and_refuses_withdrawal() {
     let dir = tempfile::tempdir().unwrap();
+    std::fs::create_dir(dir.path().join("state")).unwrap();
+    let run = test_nonce();
+    let mut processes = BTreeSet::new();
+    let mut credentials = BTreeSet::new();
+    for phase in ["create", "rebind", "revoked", "withdrawn"] {
+        let completion = restart_process(dir.path(), phase, &run).await;
+        assert!(processes.insert(completion.process_id), "process reused");
+        if let Some(fingerprint) = completion.credential_fingerprint {
+            assert!(credentials.insert(fingerprint), "relay credential reused");
+        } else {
+            assert_eq!(phase, "withdrawn");
+        }
+    }
+    assert_eq!(processes.len(), 4);
+    assert_eq!(credentials.len(), 3);
+}
+
+async fn bounded_process_output(
+    pipe: impl tokio::io::AsyncRead + Unpin,
+) -> std::io::Result<Vec<u8>> {
+    use tokio::io::AsyncReadExt;
+    let mut output = Vec::new();
+    pipe.take(RESTART_OUTPUT_LIMIT + 1)
+        .read_to_end(&mut output)
+        .await?;
+    if output.len() as u64 > RESTART_OUTPUT_LIMIT {
+        return Err(std::io::Error::other(
+            "restart helper exceeded output limit",
+        ));
+    }
+    Ok(output)
+}
+
+async fn restart_process(path: &Path, phase: &str, run: &str) -> RestartCompletion {
+    let completion_path = path.join(format!("{phase}.json"));
+    assert!(!completion_path.exists(), "stale phase completion");
+    let mut child = tokio::process::Command::new(std::env::current_exe().unwrap())
+        .args([
+            "--exact",
+            RESTART_HELPER,
+            "--ignored",
+            "--nocapture",
+            "--test-threads=1",
+        ])
+        .env("BOTUS_RESTART_PATH", path)
+        .env("BOTUS_RESTART_PHASE", phase)
+        .env("BOTUS_RESTART_RUN", run)
+        .env_remove(ENDPOINT_ENV)
+        .env_remove(RELAY_TOKEN_ENV)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true)
+        .spawn()
+        .unwrap();
+    let child_id = child.id().unwrap();
+    let stdout = child.stdout.take().unwrap();
+    let stderr = child.stderr.take().unwrap();
+    let result = tokio::time::timeout(RESTART_PROCESS_TIMEOUT, async {
+        tokio::try_join!(
+            child.wait(),
+            bounded_process_output(stdout),
+            bounded_process_output(stderr),
+        )
+    })
+    .await;
+    let (status, stdout, stderr) = match result {
+        Ok(Ok(output)) => output,
+        failure => {
+            if child.try_wait().unwrap().is_none() {
+                child.start_kill().unwrap();
+                tokio::time::timeout(Duration::from_secs(5), child.wait())
+                    .await
+                    .expect("restart helper did not exit after termination")
+                    .unwrap();
+            }
+            panic!("restart phase {phase} did not complete: {failure:?}");
+        }
+    };
+    assert!(
+        status.success(),
+        "restart phase {phase} failed:\n{}\n{}",
+        String::from_utf8_lossy(&stdout),
+        String::from_utf8_lossy(&stderr),
+    );
+    // A successful harness with zero matching tests cannot satisfy this check.
+    let completion: RestartCompletion =
+        serde_json::from_slice(&std::fs::read(completion_path).expect("missing phase completion"))
+            .unwrap();
+    assert_eq!(completion.run, run);
+    assert_eq!(completion.phase, phase);
+    assert_eq!(completion.process_id, child_id);
+    assert_ne!(completion.process_id, std::process::id());
+    completion
+}
+
+async fn creation_evidence(host: &Host, session: &SessionId) -> Value {
+    let snapshot = host
+        .runtime
+        .mob_handle()
+        .member_creation_for_session(session)
+        .await
+        .unwrap()
+        .unwrap();
+    json!({
+        "birth_cursor":snapshot.birth_cursor,
+        "session_id":snapshot.session_id,
+        "member_binding":snapshot.member_binding,
+        "creation":snapshot.creation,
+        "fork_source":snapshot.fork_source,
+    })
+}
+
+async fn assert_restored_identity(host: &Host, evidence: &RestartEvidence) {
+    assert_eq!(host.public, evidence.public, "public selection changed");
+    assert_eq!(host.session("owner").await, evidence.owner_session);
+    assert_eq!(host.session("fork").await, evidence.fork_session);
+    assert_eq!(host.identity("owner").await, evidence.owner);
+    assert_eq!(host.identity("fork").await, evidence.fork);
+    assert_eq!(
+        json!([
+            creation_evidence(host, &evidence.owner_session).await,
+            creation_evidence(host, &evidence.fork_session).await,
+        ]),
+        evidence.creation,
+    );
+}
+
+async fn assert_cells(host: &Host, member: &str, id: &Value, expected: Value) {
+    let read = success(
+        host.call(
+            member,
+            "botus_read",
+            json!({
+                "action":"read", "id":id, "query":{"range":"A1:B1"},
+            }),
+        )
+        .await,
+    );
+    assert_eq!(read["selected"]["rows"], expected);
+}
+
+async fn stop_restart_host(host: Host, path: &Path) -> u64 {
+    let secret = relay_setting(&host.runtime_config, RELAY_TOKEN_ENV);
+    let endpoint = relay_setting(&host.runtime_config, ENDPOINT_ENV);
+    let mut fingerprint = DefaultHasher::new();
+    secret.hash(&mut fingerprint);
+    host.stop().await;
+    assert_credentials_absent(path, &secret);
+    assert_credentials_absent(path, &endpoint);
+    fingerprint.finish()
+}
+
+async fn restart_create(path: &Path) -> (RestartEvidence, u64) {
     let host = Host::start(
-        dir.path(),
+        path,
         "botus-mcp-restart",
         ChildMcpAvailability::ChildAvailable,
     )
@@ -1044,114 +1238,136 @@ async fn native_mcp_restart_rebinds_transport_preserves_acl_and_refuses_withdraw
     success(host.client.result(&fork_read).await);
     let fork = host.identity("fork").await;
     let fork_session = host.session("fork").await;
-    let creation = host
-        .runtime
-        .mob_handle()
-        .member_creation_for_session(&fork_session)
-        .await
-        .unwrap()
-        .unwrap();
-    let revoked_revision = host
-        .share(&id, &revision, "durable-revoke", private())
-        .await;
-    unavailable(host.call("fork", "botus_read", describe(&id)).await);
-    let public = host.public.clone();
-    let first_runtime = host.runtime_config.clone();
-    let first_secret = relay_setting(&first_runtime, RELAY_TOKEN_ENV);
-    let first_endpoint = relay_setting(&first_runtime, ENDPOINT_ENV);
-    host.stop().await;
-    assert_credentials_absent(dir.path(), &first_secret);
-    assert_credentials_absent(dir.path(), &first_endpoint);
+    assert_ne!(owner, fork);
+    assert_ne!(owner_session, fork_session);
+    let owner_creation = creation_evidence(&host, &owner_session).await;
+    let fork_creation = creation_evidence(&host, &fork_session).await;
+    assert_eq!(fork_creation["creation"]["provenance"]["kind"], "fork");
+    assert_eq!(
+        fork_creation["fork_source"]["source_session_id"],
+        json!(owner_session)
+    );
+    assert_cells(&host, "owner", &id, json!([[7.0, 21.0]])).await;
+    let evidence = RestartEvidence {
+        public: host.public.clone(),
+        owner,
+        fork,
+        owner_session,
+        fork_session,
+        creation: json!([owner_creation, fork_creation]),
+        id,
+        revision,
+    };
+    let fingerprint = stop_restart_host(host, path).await;
+    (evidence, fingerprint)
+}
 
+async fn restart_rebind(path: &Path, mut evidence: RestartEvidence) -> (RestartEvidence, u64) {
     let host = Host::start(
-        dir.path(),
+        path,
         "botus-mcp-restart",
         ChildMcpAvailability::ChildAvailable,
     )
     .await;
-    assert_eq!(
-        host.public, public,
-        "the persisted public selection is stable"
-    );
-    assert!(
-        host.runtime_config != first_runtime,
-        "a restart must create a new host transport"
-    );
-    assert!(
-        relay_setting(&host.runtime_config, RELAY_TOKEN_ENV) != first_secret,
-        "relay credentials must rotate"
-    );
-    assert_eq!(host.session("owner").await, owner_session);
-    assert_eq!(host.session("fork").await, fork_session);
-    assert_eq!(host.identity("owner").await, owner);
-    assert_eq!(host.identity("fork").await, fork);
-    assert_eq!(
-        host.runtime
-            .mob_handle()
-            .member_creation_for_session(&fork_session)
-            .await
-            .unwrap()
-            .unwrap(),
-        creation
-    );
-    unavailable(host.call("fork", "botus_read", describe(&id)).await);
-    let restored = success(host.call("owner", "botus_read", describe(&id)).await);
-    assert_eq!(restored["revision"], revoked_revision);
-    assert_eq!(restored["access"], serde_json::to_value(private()).unwrap());
-    let revision = host
-        .share(
-            &id,
-            &revoked_revision,
-            "restored-fork-grant",
-            DocumentAccess::default(),
-        )
-        .await;
-    success(
+    assert_restored_identity(&host, &evidence).await;
+    // No regrant or respawn: this access must come from restored fork lineage.
+    assert_cells(&host, "fork", &evidence.id, json!([[7.0, 21.0]])).await;
+    evidence.revision = success(
         host.call(
             "fork",
             "botus_apply",
-            edit(&id, &revision, "restored-fork-edit", 12),
+            edit(&evidence.id, &evidence.revision, "restored-fork-edit", 12),
         )
         .await,
-    );
-    let read = success(
+    )["receipt"]["revision"]
+        .clone();
+    unavailable(
         host.call(
-            "owner",
-            "botus_read",
+            "fork",
+            "botus_apply",
             json!({
-                "action":"read", "id":id, "query":{"range":"A1:B1"},
+                "action":"share", "request_id":"restored-fork-cannot-share", "id":evidence.id,
+                "revision":evidence.revision, "access":private(),
             }),
         )
         .await,
     );
-    assert_eq!(read["selected"]["rows"], json!([[12.0, 36.0]]));
-    let second_secret = relay_setting(&host.runtime_config, RELAY_TOKEN_ENV);
-    let second_endpoint = relay_setting(&host.runtime_config, ENDPOINT_ENV);
-    host.stop().await;
-    assert_credentials_absent(dir.path(), &first_secret);
-    assert_credentials_absent(dir.path(), &second_secret);
-    assert_credentials_absent(dir.path(), &second_endpoint);
+    let described = success(
+        host.call("owner", "botus_read", describe(&evidence.id))
+            .await,
+    );
+    assert_eq!(described["revision"], evidence.revision);
+    assert_eq!(
+        described["owner"],
+        json!(Owner::Agent(evidence.owner.clone()))
+    );
+    assert_eq!(described["access"], json!(DocumentAccess::default()));
+    assert_cells(&host, "owner", &evidence.id, json!([[12.0, 36.0]])).await;
+    evidence.revision = host
+        .share(
+            &evidence.id,
+            &evidence.revision,
+            "durable-revoke",
+            private(),
+        )
+        .await;
+    unavailable(
+        host.call("fork", "botus_read", describe(&evidence.id))
+            .await,
+    );
+    let fingerprint = stop_restart_host(host, path).await;
+    (evidence, fingerprint)
+}
 
-    // Reopen the same persisted mob and public selection without registering
-    // the package. The missing binding must fail visibly, never revive with a
-    // stale endpoint or a native dispatcher fallback.
-    let client = Arc::new(ScriptClient::default());
-    let (storage, provenance) = persistent_mob_storage(dir.path().join("mob.sqlite3")).unwrap();
+async fn restart_revoked(path: &Path, evidence: RestartEvidence) -> (RestartEvidence, u64) {
+    let host = Host::start(
+        path,
+        "botus-mcp-restart",
+        ChildMcpAvailability::ChildAvailable,
+    )
+    .await;
+    assert_restored_identity(&host, &evidence).await;
+    unavailable(
+        host.call("fork", "botus_read", describe(&evidence.id))
+            .await,
+    );
+    unavailable(
+        host.call(
+            "fork",
+            "botus_apply",
+            edit(&evidence.id, &evidence.revision, "revoked-fork-edit", 99),
+        )
+        .await,
+    );
+    let described = success(
+        host.call("owner", "botus_read", describe(&evidence.id))
+            .await,
+    );
+    assert_eq!(described["revision"], evidence.revision);
+    assert_eq!(described["access"], json!(private()));
+    assert_cells(&host, "owner", &evidence.id, json!([[12.0, 36.0]])).await;
+    let fingerprint = stop_restart_host(host, path).await;
+    (evidence, fingerprint)
+}
+
+async fn restart_withdrawn(path: &Path, public: &McpServerConfig) {
+    // A fresh process opens the same public selection without registering the
+    // package. No previous listener or native dispatcher can survive here.
+    let (storage, provenance) = persistent_mob_storage(path.join("mob.sqlite3")).unwrap();
     let reopened = Box::pin(
         UnifiedRuntime::builder()
-            .definition(definition("botus-mcp-restart", &public))
-            .persistent_state(dir.path())
+            .definition(definition("botus-mcp-restart", public))
+            .persistent_state(path)
             .mob_storage(storage, provenance)
-            .default_llm_client(client.clone())
+            .default_llm_client(Arc::new(ScriptClient::default()))
             .build(),
     )
     .await;
     let refusal = match reopened {
         Err(error) => error.to_string(),
         Ok(runtime) => {
-            // A runtime may retain a failed restored member for repair. A new
-            // member selecting the same durable profile must still refuse at
-            // construction, before it could publish an unprotected tool.
+            // Restoration may retain a failed member for repair. A fresh
+            // member must still fail before publishing any unprotected tool.
             let error = runtime
                 .spawn(SpawnMemberSpec::host_root(
                     "worker",
@@ -1159,8 +1375,7 @@ async fn native_mcp_restart_rebinds_transport_preserves_acl_and_refuses_withdraw
                 ))
                 .await
                 .expect_err("withdrawn package unexpectedly built an agent");
-            let shutdown = runtime.shutdown().await;
-            assert_clean_shutdown(&shutdown);
+            assert_clean_shutdown(&runtime.shutdown().await);
             error.to_string()
         }
     };
@@ -1168,4 +1383,62 @@ async fn native_mcp_restart_rebinds_transport_preserves_acl_and_refuses_withdraw
         refusal.contains("document MCP host binding is unavailable"),
         "unexpected refusal: {refusal}"
     );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+#[ignore = "launched in exact isolated phases by the fresh-process acceptance test"]
+async fn native_mcp_restart_process_fixture() {
+    let path = PathBuf::from(std::env::var_os("BOTUS_RESTART_PATH").expect("helper path"));
+    let phase = std::env::var("BOTUS_RESTART_PHASE").expect("helper phase");
+    let run = std::env::var("BOTUS_RESTART_RUN").expect("helper run challenge");
+    let state = path.join("state");
+    let (evidence, credential_fingerprint) = if phase == "create" {
+        let (evidence, fingerprint) = restart_create(&state).await;
+        (evidence, Some(fingerprint))
+    } else {
+        let previous = match phase.as_str() {
+            "rebind" => "create",
+            "revoked" => "rebind",
+            "withdrawn" => "revoked",
+            other => panic!("unknown restart phase {other}"),
+        };
+        let previous: RestartCompletion =
+            serde_json::from_slice(&std::fs::read(path.join(format!("{previous}.json"))).unwrap())
+                .unwrap();
+        assert_eq!(previous.run, run);
+        assert_ne!(previous.process_id, std::process::id());
+        match phase.as_str() {
+            "rebind" => {
+                let (evidence, fingerprint) = restart_rebind(&state, previous.evidence).await;
+                (evidence, Some(fingerprint))
+            }
+            "revoked" => {
+                let (evidence, fingerprint) = restart_revoked(&state, previous.evidence).await;
+                (evidence, Some(fingerprint))
+            }
+            "withdrawn" => {
+                restart_withdrawn(&state, &previous.evidence.public).await;
+                (previous.evidence, None)
+            }
+            _ => unreachable!(),
+        }
+    };
+    // Every phase reaches here only after its assertions and clean shutdown.
+    // create_new plus the run challenge prevents stale or zero-test success.
+    let completion = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path.join(format!("{phase}.json")))
+        .unwrap();
+    serde_json::to_writer(
+        completion,
+        &RestartCompletion {
+            run,
+            phase,
+            process_id: std::process::id(),
+            evidence,
+            credential_fingerprint,
+        },
+    )
+    .unwrap();
 }
