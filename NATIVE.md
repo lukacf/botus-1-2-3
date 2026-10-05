@@ -36,6 +36,18 @@ retry receipts. Botus does not select a path or open a database. Unsupported
 or non-durable storage refuses activation. The native document limit is
 capped at the host's 8 MiB limit.
 
+Both definitions carry `RustBundle` provenance with source ID `botus-1-2-3`,
+so native `InheritParent` delegation can carry the registered bundle's
+visibility proof. Runtime visibility and authority gates remain in force.
+
+Explicit bundle activation with `LocalContinuityStore` enables retained
+identity history in the owning continuity schema v3. Its backfill, retention
+triggers and version stamp commit together. Earlier binaries which support
+only continuity schemas v1/v2 refuse the database afterward. For a database
+that has not opted in, ordinary open and head-only migration remain on
+v1/v2. Current binaries recognize and preserve an existing v3 database even
+when the extension is disabled; head-only writes never downgrade it.
+
 The current SDK `GatewayContinuityStore` cannot prove identity binding
 history. Registering this bundle with that store returns
 `UnifiedRuntimeBuilderError::ExtensionAuthorityUnavailable` before document

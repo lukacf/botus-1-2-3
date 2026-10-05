@@ -44,6 +44,11 @@ format. WK1 is an optional future novelty. No binary compatibility is
 claimed. No lotus flowers, spreadsheets or 5.25-inch floppies were harmed
 in the design of this package.
 
+Native bundle activation opts the host's local continuity store into schema
+v3 identity history. Earlier binaries which support only v1/v2 then refuse
+that database. Ordinary opens and head-only migration do not opt in. See the
+[native guide](NATIVE.md) for the compatibility boundary.
+
 ## Development
 
 Use `make check`, `make test`, `make lint` and `make fmt`. Build caches stay

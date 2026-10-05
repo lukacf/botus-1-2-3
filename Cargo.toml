@@ -16,7 +16,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 async-trait = { version = "0.1", optional = true }
 meerkat-core = { version = "=0.8.51", optional = true }
-meerkat-mobkit = { git = "https://github.com/lukacf/meerkat-mobkit", rev = "ed769e54c503c3a84e734b1e2700ee263d6f54d1", features = ["extension-state"], optional = true }
+meerkat-mobkit = { git = "https://github.com/lukacf/meerkat-mobkit", rev = "0b4cbb0bbf1bc34d784e9615fc82475de646af83", features = ["extension-state"], optional = true }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"], optional = true }
 
 [dev-dependencies]
