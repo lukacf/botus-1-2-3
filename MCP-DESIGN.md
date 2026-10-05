@@ -22,8 +22,13 @@ identity or infer an agent from a display name.
 
 Registration is explicit. Disabled hosts and profiles expose zero Botus
 tools. Profiles use either the native bundle or the MCP endpoint, avoiding
-duplicate registration. Tool definitions remain compact; the skill contains
-the complete functional reference and tools provide bounded on-demand help.
+duplicate registration. Tool definitions remain compact. The skill indexes
+complete bundled chapters, embedded from those same files into `botus_read`
+help. Agents without file access use `{"action":"help","topic":"read"}`
+or `{"action":"help","topic":"apply"}`; the other full topics are
+`operations`, `formulas`, `access`, and `limits`. This uses the same authenticated
+read path and response bound, without adding tools or depending on a skill
+resource reader. Oversized chapters fail visibly rather than truncate.
 
 ## Transport and authentication
 

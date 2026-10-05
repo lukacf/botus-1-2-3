@@ -1,5 +1,8 @@
 # Ownership and sharing reference
 
+Retrieve this complete chapter without file access using
+`botus_read {"action":"help","topic":"access"}`; the text is in `help`.
+
 Access is enforced by the host's document service on each call. Botus never
 accepts caller identity, realm, mob membership, ancestry, or administrator
 status as tool arguments. IDs below select resources or recipients; none

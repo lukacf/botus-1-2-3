@@ -1,5 +1,8 @@
 # Formula language reference
 
+Retrieve this complete chapter without file access using
+`botus_read {"action":"help","topic":"formulas"}`; the text is in `help`.
+
 Enter formulas with the `formula` operation or a cell object
 `{"formula":"=SUM(A1:A9)"}`. A plain string such as `"=SUM(A1:A9)"` is text.
 Within the formula string, surrounding whitespace is trimmed and one leading

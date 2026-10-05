@@ -1,7 +1,8 @@
 # Limits and errors reference
 
-Use `botus_read {"action":"help","topic":"limits"}` for the actual host
-configuration. Defaults below describe the standard native adapter; the host
+Use `botus_read {"action":"help","topic":"limits"}` to retrieve this complete
+chapter in `notes` and the actual host configuration in `limits`, without file
+access. Defaults below describe the standard native adapter; the host
 can choose lower or different engine limits. The initial tool schemas remain
 compact; a schema description is not permission to exceed runtime bounds.
 
@@ -41,6 +42,13 @@ The MCP host reserves another 256 bytes for its result envelope before
 mutation preflight. With default configuration, its reported `response_bytes`
 is 261888; the minimum configured MCP response budget is 16640 bytes. Use the
 live help response for the selected host's effective limit.
+
+Full help chapters use the same response bound as other reads, including JSON
+escaping and tool envelopes. They are never truncated and have no pagination.
+If the whole chapter cannot fit, the tool returns `limit` and the host must
+allow a larger response. If even the error envelope cannot fit, native
+dispatch fails with `Botus response exceeds byte limit`; MCP reports the
+generic dispatch failure described in the tool-error section below.
 
 ## Fixed bounds and defaults
 
@@ -94,7 +102,7 @@ The tool result is marked as an error. Codes emitted by the adapter are:
 | `request_id_reused` | Same caller's request ID already committed different normalized content; do not alter an existing logical request |
 | `workbook` | Engine validation, syntax, reference, calculation, or engine-limit failure; inspect the message and correct/narrow the operation |
 | `version` | Stored document content type or schema version is unsupported |
-| `limit` | Adapter request/serialized-output cap; narrow the request/selection |
+| `limit` | Adapter request/serialized-output cap; narrow a data request/selection or raise the host response cap for a complete help chapter |
 | `storage` | Host document storage failed; no fallback to an independent database or memory |
 | `serialization` | Adapter could not serialize the result |
 

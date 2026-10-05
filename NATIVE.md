@@ -91,11 +91,18 @@ revision. Read with:
 {"action":"read","id":"document-id-from-receipt","query":{"range":"A1:D2"}}
 ```
 
-`botus_read` also accepts `identity`, `list`, `describe` and `help`. Fetch
-detailed help on demand with `{"action":"help","topic":"operations"}`.
-Other topics are `overview`, `formulas`, `access` and `limits`. The access help examples are
-serialized from the actual host types. The concise initial tool definitions
-have a 6 KiB combined regression budget.
+`botus_read` also accepts `identity`, `list`, `describe` and `help`. Fetch a
+complete reference chapter without shell access with
+`botus_read {"action":"help","topic":"read"}` or
+`botus_read {"action":"help","topic":"apply"}`. Other chapter topics are
+`operations`, `formulas`, `access`, and `limits`; `overview` is a compact index.
+Chapter text is in `help`, except `operations` and `limits` use `notes`. Access
+examples still serialize the actual host types, and `limits` reports the
+current host configuration. Chapters are embedded from the Markdown files
+bundled with the skill. Help needs the same authenticated caller and response
+budget as other reads; an oversized complete chapter fails with `limit`,
+without truncation. The concise initial tool definitions have a 6 KiB combined
+regression budget.
 
 Use the same request ID and original request to retry a lost response. A
 replay returns the exact durable receipt with `replayed:true`, omitting

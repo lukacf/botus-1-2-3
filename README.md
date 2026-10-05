@@ -24,8 +24,13 @@ functional reference, with separate chapters for
 [formulas](skills/botus-1-2-3/references/formulas.md),
 [access control](skills/botus-1-2-3/references/access.md), and
 [limits and errors](skills/botus-1-2-3/references/limits-and-errors.md).
-Agents can load the relevant chapter without carrying the whole manual in
-every tool call. All chapters travel with the skill.
+Agents retrieve one complete chapter through the existing read tool, without
+shell access: `botus_read {"action":"help","topic":"read"}` or
+`botus_read {"action":"help","topic":"apply"}`. The other topics are
+`operations`, `formulas`, `access`, and `limits`. All chapters travel with the
+skill and are embedded in the executable from those same files. Help still
+requires an active host binding and authenticated caller; installing the
+skill alone does not provide tool access.
 
 ## Package assets
 

@@ -2,6 +2,9 @@
 //! Adapter tests use the real SQLite backend and a deliberately explicit test
 //! authority. Runtime lineage and full MobKit host restart need host tests too.
 
+#[path = "support/help_chapters.rs"]
+mod help_chapters;
+
 use async_trait::async_trait;
 use botus_1_2_3::{
     Limits,
@@ -323,6 +326,77 @@ async fn schemas_are_compact_and_authority_is_never_an_argument() -> TestResult 
             assert_eq!(result["error"]["code"], "invalid_input");
         }
     }
+    Ok(())
+}
+
+#[tokio::test]
+async fn full_help_chapters_fit_minimum_response_budget_and_refuse_oversized_envelopes()
+-> TestResult {
+    let temporary = tempfile::tempdir()?;
+    let user = actor("manual-reader")?;
+    let max_response_bytes = 16 * 1024;
+    let tools = tools(
+        &temporary.path().join("host.sqlite3"),
+        authority(std::slice::from_ref(&user))?,
+        Limits {
+            max_response_bytes,
+            ..Limits::default()
+        },
+    )?;
+    let definitions = tool_definitions();
+    let read = definitions
+        .iter()
+        .find(|definition| definition.name == "botus_read")
+        .ok_or("missing read definition")?;
+    let validator =
+        jsonschema::validator_for(&read.input_schema).map_err(|error| error.to_string())?;
+    for (topic, field, chapter) in help_chapters::CHAPTERS {
+        let request = json!({"action":"help","topic":topic});
+        assert!(validator.is_valid(&request), "schema rejects {topic}");
+        let raw = serde_json::value::to_raw_value(&request)?;
+        let outcome = tools
+            .dispatch_with_context(
+                ToolCallView {
+                    id: "full-manual-chapter",
+                    name: "botus_read",
+                    args: &raw,
+                },
+                &user.0,
+            )
+            .await?;
+        assert!(!outcome.result.is_error, "help failed for {topic}");
+        assert!(serde_json::to_vec(&outcome.result)?.len() <= max_response_bytes);
+        let result: Value = serde_json::from_str(&outcome.result.text_content())?;
+        assert_eq!(result[field].as_str(), Some(chapter), "incomplete {topic}");
+        if topic == "limits" {
+            assert_eq!(result["limits"]["response_bytes"], max_response_bytes);
+        }
+    }
+
+    // The complete chapter fits, but an escaped tool-call ID can make its
+    // enclosing result too large. The bounded error must replace the whole
+    // response, never return a silently shortened manual.
+    let large_call_id = "\\".repeat(6 * 1024);
+    let raw = serde_json::value::to_raw_value(&json!({"action":"help","topic":"apply"}))?;
+    let outcome = tools
+        .dispatch_with_context(
+            ToolCallView {
+                id: &large_call_id,
+                name: "botus_read",
+                args: &raw,
+            },
+            &user.0,
+        )
+        .await?;
+    assert!(outcome.result.is_error);
+    assert!(serde_json::to_vec(&outcome.result)?.len() <= max_response_bytes);
+    let result: Value = serde_json::from_str(&outcome.result.text_content())?;
+    assert_eq!(result["error"]["code"], "limit");
+    assert_eq!(
+        result["error"]["message"],
+        "Complete help chapter exceeds response byte limit; the host must allow a larger response"
+    );
+    assert!(result.get("help").is_none());
     Ok(())
 }
 

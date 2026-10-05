@@ -1,5 +1,8 @@
 # botus_apply functional reference
 
+Retrieve this complete chapter without file access using
+`botus_read {"action":"help","topic":"apply"}`; the text is in `help`.
+
 `botus_apply` performs one durable mutation on one workbook. Examples show
 logical JSON arguments/results, inside any transport's tool-result wrapper.
 All calls require a current host-authenticated caller. No argument can supply

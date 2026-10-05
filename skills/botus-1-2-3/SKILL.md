@@ -13,27 +13,36 @@ gap; do not claim data was saved or invent a local-file fallback.
 
 ## Load the reference for the job
 
-Read the relevant bundled reference before first using that part of the
-interface. These files are the complete functional reference, not setup
-commands. All links stay inside this skill so it can be copied independently.
+Retrieve the relevant chapter through `botus_read` before first using that
+part of the interface. Each help call returns the complete bundled reference
+shown below, with no shell or separate resource reader required. Use the
+actual discovered tool name if the host adds a prefix.
 
 - [Read](references/read.md): all five `botus_read` actions, every query and
   filter field, defaults, responses, pagination, and help topics.
+  Call `botus_read {"action":"help","topic":"read"}`.
 - [Apply](references/apply.md): all five `botus_apply` actions, request and
   receipt shapes, atomicity, revision conflicts, and exact retry rules.
+  Call `botus_read {"action":"help","topic":"apply"}`.
 - [Operations](references/operations.md): all eight batch operations, cell
   values, addresses, sheets, named ranges, copy/fill, and sorting behavior.
+  Call `botus_read {"action":"help","topic":"operations"}`.
 - [Formulas](references/formulas.md): complete syntax, functions, aliases,
   coercion, reference shifting, lazy evaluation, and error behavior.
+  Call `botus_read {"action":"help","topic":"formulas"}`.
 - [Access](references/access.md): complete owner, principal, audience, grant,
   and deny JSON; private defaults, forks, ordinary children, and revocation.
+  Call `botus_read {"action":"help","topic":"access"}`.
 - [Limits and errors](references/limits-and-errors.md): every configured
   limit, fixed bound, tool error, and cell error.
+  Call `botus_read {"action":"help","topic":"limits"}`.
 
-The host's skill/resource reader can load these references without shell
-access. Botus also provides in-tool help through
-`botus_read {"action":"help","topic":"operations"}`; topics are
-`overview`, `operations`, `formulas`, `access`, and `limits`.
+Chapter text is in the `help` field, except `operations` and `limits` use
+`notes`. The `limits` object reports the host's current bounds. Omit `topic`
+for a compact overview. Help requires the same active tool binding and
+authenticated caller as other reads. A chapter that exceeds the response
+bound fails with `limit`; it is never silently shortened. The Markdown files
+remain bundled for hosts that provide file access.
 
 ## Operating rules
 

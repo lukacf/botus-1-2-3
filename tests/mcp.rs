@@ -3,6 +3,9 @@
 //! The resolver is explicit test authority; full native lineage belongs in the
 //! MobKit host acceptance suite, not in a second identity implementation here.
 
+#[path = "support/help_chapters.rs"]
+mod help_chapters;
+
 use async_trait::async_trait;
 use botus_1_2_3::{
     mcp::{BotusMcpContextProvider, BotusMcpHost, BotusMcpListener, PreparedCall},
@@ -423,6 +426,14 @@ async fn mcp_envelope_budget_rejects_before_mutation() -> TestResult {
     )
     .await?;
     let client = fixture.connect().await?;
+    for (topic, field, chapter) in help_chapters::CHAPTERS {
+        let (request, _lease) =
+            fixture.request("botus_read", json!({"action":"help","topic":topic}))?;
+        let result = client.call_tool(request).await?;
+        assert_ne!(result.is_error, Some(true), "help failed for {topic}");
+        assert!(serde_json::to_vec(&result)?.len() <= limit);
+        assert_eq!(body(&result)?[field].as_str(), Some(chapter));
+    }
     let (request, _lease) = fixture.request("botus_apply", json!({"action":"create","request_id":"escaped-selection","title":"Boundary","operations":[{"op":"put","at":"A1","values":[["\"\\".repeat(8000)]]}],"select":{"range":"A1"}}))?;
     let result = client.call_tool(request).await?;
     assert_eq!(result.is_error, Some(true));

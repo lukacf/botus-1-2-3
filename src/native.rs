@@ -60,6 +60,8 @@ pub enum ReadAction {
 pub enum HelpTopic {
     #[default]
     Overview,
+    Read,
+    Apply,
     Operations,
     Formulas,
     Access,
@@ -378,7 +380,15 @@ impl BotusTools {
                     false,
                 )
             }
-            ReadAction::Help { topic } => self.output(call_id, &help(topic, &self.limits), false),
+            ReadAction::Help { topic } => self
+                .output(call_id, &help(topic, &self.limits), false)
+                .map_err(|error| match error {
+                    Failure::Operation { code: "limit", .. } => Failure::new(
+                        "limit",
+                        "Complete help chapter exceeds response byte limit; the host must allow a larger response",
+                    ),
+                    other => other,
+                }),
         }
     }
     async fn apply(
@@ -599,10 +609,10 @@ pub fn tool_definitions() -> Vec<ToolDef> {
     vec![
         ToolDef::new(
             "botus_read",
-            "Read durable agent spreadsheets: identity, list, describe, read or help. identity returns your host-resolved caller_principal for sharing. A read returns a bounded matrix and revision. Fetch help for operation/formula/access syntax.",
+            "Read durable agent spreadsheets: identity, list, describe, read or help. identity returns your host-resolved caller_principal for sharing. A read returns a bounded matrix and revision. Fetch help topics read/apply/operations/formulas/access/limits for complete reference chapters.",
             json!({"type":"object","additionalProperties":false,"required":["action"],"properties":{
                 "action":{"enum":["identity","list","describe","read","help"]},"id":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":100},"after":{"type":["string","null"]},"query":query,
-                "topic":{"enum":["overview","operations","formulas","access","limits"]}
+                "topic":{"enum":["overview","read","apply","operations","formulas","access","limits"]}
             }}),
         )
         .with_provenance(ToolProvenance {
@@ -630,7 +640,13 @@ pub fn tool_definitions() -> Vec<ToolDef> {
 fn help(topic: HelpTopic, limits: &Limits) -> Json {
     match topic {
         HelpTopic::Overview => {
-            json!({"help":"Use botus_apply create with title, request_id and optional operations. Then use returned document_id and revision for edit/share/transfer/delete. botus_read identity returns the current caller_principal for use as a sharing recipient, never as authentication. list returns accessible documents; describe gives sheets/names/access; read takes id and query. query fields: sheet (Sheet1), range (occupied bounds), columns (letters), view (values/formulas), offset (physical rows), limit (100), filter {column,op,value}. Values are number, Unicode text, boolean or null. Formula cells are {formula:\"=SUM(A1:A9)\"}. Dates are ISO text. Replay returns the original receipt only; reread for current cells. No export, macros or WK1 compatibility. Help topics: operations, formulas, access, limits."})
+            json!({"help":"Use botus_apply create with title, request_id and optional operations. Then use returned document_id and revision for edit/share/transfer/delete. botus_read identity returns the current caller_principal for use as a sharing recipient, never as authentication. list returns accessible documents; describe gives sheets/names/access; read takes id and query. query fields: sheet (Sheet1), range (occupied bounds), columns (letters), view (values/formulas), offset (physical rows), limit (100), filter {column,op,value}. Values are number, Unicode text, boolean or null. Formula cells are {formula:\"=SUM(A1:A9)\"}. Dates are ISO text. Replay returns the original receipt only; reread for current cells. No export, macros or WK1 compatibility. Fetch one complete reference chapter with botus_read {action:\"help\",topic:\"read\"}. Topics: read, apply, operations, formulas, access, limits. Chapter text is in help, except operations and limits use notes. No shell or separate resource reader is required."})
+        }
+        HelpTopic::Read => {
+            json!({"help":include_str!("../skills/botus-1-2-3/references/read.md")})
+        }
+        HelpTopic::Apply => {
+            json!({"help":include_str!("../skills/botus-1-2-3/references/apply.md")})
         }
         HelpTopic::Operations => json!({"operations":[
             {"op":"create_sheet","name":"Budget"}, {"op":"put","at":"A1","values":[["Floppy reserve",3,true,null,{"formula":"=B1*4"}]]},
@@ -638,9 +654,9 @@ fn help(topic: HelpTopic, limits: &Limits) -> Json {
             {"op":"copy","range":"A1:B3","to":"D1","target_sheet":"Budget"},{"op":"fill","range":"A1:B1","to":"A2:D9"},
             {"op":"sort","range":"A1:C9","keys":[{"column":"B","descending":true}],"header":true},
             {"op":"name","name":"COSTS","range":"B2:B9"}
-        ],"notes":"All except create_sheet accept sheet (default Sheet1). Unknown fields reject. Copy destination is top-left; fill destination is a range tiled by source size. References shift unless $ anchored. Overlap snapshots the source. Sort keys are absolute columns; header stays fixed. Formula cells in sorted data reject. A failed batch leaves the workbook unchanged."}),
+        ],"notes":include_str!("../skills/botus-1-2-3/references/operations.md")}),
         HelpTopic::Formulas => {
-            json!({"help":"Arithmetic + - * / ^; parentheses; numeric comparisons = <> < > <= >=; A1, $A$1, A$1, $A1; A1:B9 or A1..B9; named ranges; 'Other sheet'!A1. SUM, AVERAGE, MIN, MAX, COUNT and lazy IF(condition,then,else). Optional @ prefix uses identical semantics. Aggregates count only numbers, ignoring text, booleans and blanks. Empty SUM/MIN/MAX return 0; empty AVERAGE errors. Scalar arithmetic accepts numbers, blank=0 and bool=0/1; arbitrary text rejects. Comparisons are numeric. Strings use double quotes; escape by doubling them. IF evaluates only its selected branch. Errors remain distinct from strings. No volatile, external, lookup or macro functions; no Excel/Lotus compatibility claim."})
+            json!({"help":include_str!("../skills/botus-1-2-3/references/formulas.md")})
         }
         HelpTopic::Access => {
             use documents::{Audience, DeniedOperation, Deny, Grant, Principal, Reach, Role};
@@ -670,7 +686,7 @@ fn help(topic: HelpTopic, limits: &Limits) -> Json {
                     denies: vec![],
                 },
             };
-            json!({"help":"Owner is administrative, separate from read/edit grants. Default owner is the actual caller and owner_reach is forks. The host validates requested recipients. access completely replaces owner_reach/grants/denies; omitted arrays are empty. Reach is self_only, forks or descendants. A read denial also blocks edit. Readers cannot edit; editors cannot administer. Forks use the original workbook ID, inherit capped grants, never ownership. Spawned children need descendants or explicit grants. Ask the child to call botus_read identity and copy its exact caller_principal into the grant recipient. This reported value selects a recipient; it never authenticates the caller. Never derive Worker fields from display names or session IDs. Current host policy and revocation always apply. Actor, realm, ancestry and admin fields are never accepted as caller claims.","examples":{
+            json!({"help":include_str!("../skills/botus-1-2-3/references/access.md"),"examples":{
                 "owners":[Owner::Agent(agent),Owner::Mob("mob-id".into()),Owner::Realm],
                 "audiences":[audience.clone(),Audience::Mob("mob-id".into()),Audience::Realm],
                 "worker_identity":{"caller_principal":worker},
@@ -679,7 +695,7 @@ fn help(topic: HelpTopic, limits: &Limits) -> Json {
             }})
         }
         HelpTopic::Limits => {
-            json!({"limits":{"sheets":limits.max_sheets,"rows":limits.max_rows,"columns":limits.max_columns,"stored_cells":limits.max_cells,"cell_text_bytes":limits.max_cell_text_bytes,"total_text_bytes":limits.max_total_text_bytes,"document_bytes":limits.max_document_bytes,"formula_bytes":limits.max_formula_bytes,"formula_nodes":limits.max_formula_nodes,"batch_operations":limits.max_batch_operations,"operation_cells":limits.max_operation_cells,"read_rows":limits.max_read_rows,"read_cells":limits.max_read_cells,"scan_rows":limits.max_scan_rows,"evaluation_steps":limits.max_evaluation_steps,"dependency_depth":limits.max_dependency_depth,"response_bytes":limits.max_response_bytes,"request_bytes":MAX_REQUEST_BYTES},"notes":"Limits are per entire call, including shared formula work. Reads do not persist caches. Oversized selections fail rather than truncate. next_offset counts physical input rows, including filtered rows."})
+            json!({"limits":{"sheets":limits.max_sheets,"rows":limits.max_rows,"columns":limits.max_columns,"stored_cells":limits.max_cells,"cell_text_bytes":limits.max_cell_text_bytes,"total_text_bytes":limits.max_total_text_bytes,"document_bytes":limits.max_document_bytes,"formula_bytes":limits.max_formula_bytes,"formula_nodes":limits.max_formula_nodes,"batch_operations":limits.max_batch_operations,"operation_cells":limits.max_operation_cells,"read_rows":limits.max_read_rows,"read_cells":limits.max_read_cells,"scan_rows":limits.max_scan_rows,"evaluation_steps":limits.max_evaluation_steps,"dependency_depth":limits.max_dependency_depth,"response_bytes":limits.max_response_bytes,"request_bytes":MAX_REQUEST_BYTES},"notes":include_str!("../skills/botus-1-2-3/references/limits-and-errors.md")})
         }
     }
 }

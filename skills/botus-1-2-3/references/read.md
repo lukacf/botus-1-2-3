@@ -1,5 +1,8 @@
 # botus_read functional reference
 
+Retrieve this complete chapter without file access using
+`botus_read {"action":"help","topic":"read"}`; the text is in `help`.
+
 Use the actual discovered tool name. Examples show JSON arguments and logical
 JSON results; the transport may wrap the result as tool content. All actions
 are read-only and require a host-resolved current caller, even `help` and
@@ -174,10 +177,24 @@ Optional field `topic` is one of the following; omission means `overview`.
 | Topic | Response fields | Contents |
 | --- | --- | --- |
 | `overview` | `help` string | Basic action/query usage and boundaries |
-| `operations` | `operations` array, `notes` string | Examples for all eight operations |
-| `formulas` | `help` string | Language and evaluation rules |
-| `access` | `help` string, `examples` object | Tagged owners/audiences, worker identity, sharing, and access examples |
-| `limits` | `limits` object, `notes` string | Actual host-selected numeric bounds |
+| `read` | `help` string | This complete read reference |
+| `apply` | `help` string | Complete apply reference, including retry and receipt rules |
+| `operations` | `operations` array, `notes` string | Full operation reference in `notes`, plus examples for all eight operations |
+| `formulas` | `help` string | Complete language and evaluation reference |
+| `access` | `help` string, `examples` object | Complete access reference plus tagged owner/audience and sharing examples |
+| `limits` | `limits` object, `notes` string | Complete limits/error reference in `notes`, plus actual host-selected numeric bounds |
+
+Every non-overview topic returns its entire bundled Markdown chapter, embedded
+from the same file shipped with the skill. No shell or separate resource
+reader is needed. Follow a relative reference link by requesting its matching
+topic above; `limits-and-errors.md` corresponds to `limits`.
+
+Help is subject to the same current caller check and serialized response cap
+as other reads. It has no pagination and does not truncate. If a complete
+chapter and its tool envelope exceed the cap, the tool returns `limit`; the
+host must allow a larger response. If even the error envelope cannot fit,
+native dispatch fails with `Botus response exceeds byte limit`; MCP reports a
+generic dispatch failure as described in [limits and errors](limits-and-errors.md).
 
 `access.examples` has `owners`, `audiences`, `worker_identity`,
 `share_with_worker`, and `access`. Example identities are illustrative

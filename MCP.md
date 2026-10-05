@@ -119,5 +119,22 @@ arguments. The runtime issues a new transport correlation. MobKit's durable
 receipt resolves whether the original write committed. Cancellation cannot
 undo a write that already committed.
 
-The [agent skill](skills/botus-1-2-3/SKILL.md) carries the complete functional
-reference. F9 remembers the formulas. MobKit remembers who may read them.
+## Read the manual without file access
+
+The [agent skill](skills/botus-1-2-3/SKILL.md) indexes complete functional
+chapters. Call the existing read tool with
+`botus_read {"action":"help","topic":"read"}` for all read actions or
+`botus_read {"action":"help","topic":"apply"}` for all mutations. The
+other chapter topics are `operations`, `formulas`, `access`, and `limits`.
+Use the actual discovered tool name if a host prefixes it.
+
+Each chapter is embedded from the same Markdown file shipped with the skill.
+The full text appears in `help`, except `operations` and `limits` use `notes`;
+their existing operation examples and live `limits` object remain available.
+Help uses the normal authenticated MCP call path. It needs neither shell
+access nor a separate skill-resource tool. The response bound applies to the
+complete chapter and envelope; an oversized result returns `limit`, without
+truncation or pagination. A missing host binding cannot be repaired by loading
+the skill alone.
+
+F9 remembers the formulas. MobKit remembers who may read them.

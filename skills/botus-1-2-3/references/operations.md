@@ -1,5 +1,8 @@
 # Workbook operation reference
 
+Retrieve this complete chapter without file access using
+`botus_read {"action":"help","topic":"operations"}`; the text is in `notes`.
+
 These are the eight accepted objects in a create/edit action's `operations`
 array. Each requires `op`; unknown fields reject. Operations run in order
 inside one atomic mutation. Read [apply](apply.md) before submitting a batch.
