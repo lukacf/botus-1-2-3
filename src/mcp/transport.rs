@@ -173,8 +173,13 @@ mod tests {
                 .0["token"],
             token
         );
+        // rmcp lifts protocol metadata into request extensions while parsing.
         assert_eq!(
-            request.params.meta.ok_or("Missing metadata")?.0["io.meerkat/origin"],
+            request
+                .extensions
+                .get::<rmcp::model::Meta>()
+                .ok_or("Missing metadata")?
+                .0["io.meerkat/origin"],
             json!({"test":"unchanged"})
         );
         let mut malformed =
