@@ -22,7 +22,7 @@ use meerkat_mob::{
     SpawnMemberSpec,
 };
 use meerkat_mobkit::{
-    UnifiedRuntime,
+    MobTerminalShutdownOutcome, UnifiedRuntime, UnifiedRuntimeShutdownReport,
     extension_state::{
         ChildMcpAvailability, HostMcpDocumentBinding,
         documents::{Audience, DocumentAccess, Grant, Owner, Principal, Reach, Role},
@@ -460,7 +460,7 @@ read_only = true
 }
 
 impl Host {
-    async fn start(path: &Path, availability: ChildMcpAvailability) -> Self {
+    async fn start(path: &Path, mob_id: &str, availability: ChildMcpAvailability) -> Self {
         let host = Arc::new(BotusMcpHost::default());
         let listener = host.start().await.unwrap();
         let runtime_config = listener.relay_config(env!("CARGO_BIN_EXE_botus-1-2-3"));
@@ -496,7 +496,7 @@ impl Host {
         agent_config.budget.max_tokens = Some(200_000);
         let runtime = Box::pin(
             UnifiedRuntime::builder()
-                .definition(definition("botus-mcp-acceptance", &public))
+                .definition(definition(mob_id, &public))
                 .persistent_state(path)
                 .mob_storage(storage, provenance)
                 .meerkat_config(agent_config)
@@ -591,12 +591,28 @@ impl Host {
 
     async fn stop(self) {
         let shutdown = self.runtime.shutdown().await;
-        assert!(
-            shutdown.cleanup_completed(),
-            "incomplete shutdown: {shutdown:?}"
-        );
+        assert_clean_shutdown(&shutdown);
         drop(self.runtime);
         self.listener.shutdown().await.unwrap();
+    }
+}
+
+fn assert_clean_shutdown(shutdown: &UnifiedRuntimeShutdownReport) {
+    assert!(
+        shutdown.cleanup_completed(),
+        "incomplete shutdown: {shutdown:?}"
+    );
+    // cleanup_completed deliberately excludes terminal supervisor teardown.
+    // Same-process reopen also requires that exact route to be released.
+    match &shutdown.mob_terminal_shutdown {
+        MobTerminalShutdownOutcome::Completed(report) => {
+            assert!(
+                report.is_clean(),
+                "incomplete terminal shutdown: {report:?}"
+            );
+        }
+        MobTerminalShutdownOutcome::AlreadyShutDown => {}
+        other => panic!("terminal shutdown did not complete: {other:?}"),
     }
 }
 
@@ -637,7 +653,12 @@ fn private() -> DocumentAccess {
 #[tokio::test(flavor = "multi_thread")]
 async fn native_mcp_identity_fork_off_child_acl_and_read_only() {
     let dir = tempfile::tempdir().unwrap();
-    let host = Host::start(dir.path(), ChildMcpAvailability::HostOnly).await;
+    let host = Host::start(
+        dir.path(),
+        "botus-mcp-lineage",
+        ChildMcpAvailability::HostOnly,
+    )
+    .await;
     host.spawn("worker", "owner").await;
     let owner = host.identity("owner").await;
     let owner_session = host.session("owner").await;
@@ -834,7 +855,7 @@ async fn native_mcp_child_supply_and_copied_host_only_descriptor() {
         ChildMcpAvailability::ChildAvailable,
     ] {
         let dir = tempfile::tempdir().unwrap();
-        let host = Host::start(dir.path(), availability).await;
+        let host = Host::start(dir.path(), "botus-mcp-child-supply", availability).await;
         host.spawn("worker", "owner").await;
         let owner = host.identity("owner").await;
         let available = availability == ChildMcpAvailability::ChildAvailable;
@@ -951,8 +972,14 @@ async fn native_mcp_child_supply_and_copied_host_only_descriptor() {
             panic!("inline")
         };
         assert_eq!(profile.tools.mcp_servers, vec![host.public.clone()]);
-        state.mob_stop(&child_id).await.unwrap();
         drop(child);
+        // Stop alone keeps child supervisor routes alive. Canonical owner
+        // cleanup destroys both the explicit and implicit child before the
+        // next availability case reuses their names.
+        state
+            .destroy_bridge_session_mobs(&host.session("owner").await.to_string())
+            .await
+            .unwrap();
         drop(state);
         host.stop().await;
     }
@@ -987,7 +1014,12 @@ fn relay_setting(config: &McpServerConfig, key: &str) -> String {
 #[tokio::test(flavor = "multi_thread")]
 async fn native_mcp_restart_rebinds_transport_preserves_acl_and_refuses_withdrawal() {
     let dir = tempfile::tempdir().unwrap();
-    let host = Host::start(dir.path(), ChildMcpAvailability::ChildAvailable).await;
+    let host = Host::start(
+        dir.path(),
+        "botus-mcp-restart",
+        ChildMcpAvailability::ChildAvailable,
+    )
+    .await;
     host.spawn("worker", "owner").await;
     let owner = host.identity("owner").await;
     let owner_session = host.session("owner").await;
@@ -1031,7 +1063,12 @@ async fn native_mcp_restart_rebinds_transport_preserves_acl_and_refuses_withdraw
     assert_credentials_absent(dir.path(), &first_secret);
     assert_credentials_absent(dir.path(), &first_endpoint);
 
-    let host = Host::start(dir.path(), ChildMcpAvailability::ChildAvailable).await;
+    let host = Host::start(
+        dir.path(),
+        "botus-mcp-restart",
+        ChildMcpAvailability::ChildAvailable,
+    )
+    .await;
     assert_eq!(
         host.public, public,
         "the persisted public selection is stable"
@@ -1102,7 +1139,7 @@ async fn native_mcp_restart_rebinds_transport_preserves_acl_and_refuses_withdraw
     let (storage, provenance) = persistent_mob_storage(dir.path().join("mob.sqlite3")).unwrap();
     let reopened = Box::pin(
         UnifiedRuntime::builder()
-            .definition(definition("botus-mcp-acceptance", &public))
+            .definition(definition("botus-mcp-restart", &public))
             .persistent_state(dir.path())
             .mob_storage(storage, provenance)
             .default_llm_client(client.clone())
@@ -1123,10 +1160,7 @@ async fn native_mcp_restart_rebinds_transport_preserves_acl_and_refuses_withdraw
                 .await
                 .expect_err("withdrawn package unexpectedly built an agent");
             let shutdown = runtime.shutdown().await;
-            assert!(
-                shutdown.cleanup_completed(),
-                "incomplete withdrawal cleanup: {shutdown:?}"
-            );
+            assert_clean_shutdown(&shutdown);
             error.to_string()
         }
     };
