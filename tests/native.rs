@@ -10,7 +10,8 @@ use botus_1_2_3::{
     },
 };
 use meerkat_core::{
-    AgentToolDispatcher, SessionId, ToolCallView, ToolDispatchContext, ToolError, ToolMutationClass,
+    AgentToolDispatcher, SessionId, ToolCallView, ToolDispatchContext, ToolError,
+    ToolMutationClass, ToolProvenance, ToolSourceKind,
 };
 use meerkat_mobkit::extension_state::{
     ToolBundleContext, ToolBundleFactory, ToolCallerResolver, documents::*,
@@ -158,7 +159,27 @@ async fn create(
 
 #[tokio::test]
 async fn schemas_are_compact_and_authority_is_never_an_argument() -> TestResult {
-    assert!(serde_json::to_vec(&tool_definitions())?.len() <= MAX_TOOL_DEFINITION_BYTES);
+    let definitions = tool_definitions();
+    let serialized_definitions = serde_json::to_vec(&definitions)?;
+    assert_eq!(definitions.len(), 2);
+    assert!(serialized_definitions.len() <= MAX_TOOL_DEFINITION_BYTES);
+    let wire_definitions: Vec<Value> = serde_json::from_slice(&serialized_definitions)?;
+    let bundle_provenance = ToolProvenance {
+        kind: ToolSourceKind::RustBundle,
+        source_id: NAMESPACE.into(),
+    };
+    for ((definition, wire), name) in definitions
+        .iter()
+        .zip(&wire_definitions)
+        .zip(["botus_read", "botus_apply"])
+    {
+        assert_eq!(wire["name"], name);
+        assert_eq!(definition.provenance.as_ref(), Some(&bundle_provenance));
+        assert_eq!(
+            wire["provenance"],
+            json!({"kind":"rust_bundle","source_id":NAMESPACE})
+        );
+    }
     let temporary = tempfile::tempdir()?;
     let user = actor("bookkeeper")?;
     let tools = tools(
@@ -167,6 +188,9 @@ async fn schemas_are_compact_and_authority_is_never_an_argument() -> TestResult 
         Limits::default(),
     )?;
     assert_eq!(tools.tools().len(), 2);
+    for definition in tools.tools().iter() {
+        assert_eq!(definition.provenance.as_ref(), Some(&bundle_provenance));
+    }
     let access_help = send(
         &tools,
         &user.0,

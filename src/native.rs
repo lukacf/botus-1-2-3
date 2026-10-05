@@ -11,7 +11,7 @@ use documents::{
 };
 use meerkat_core::{
     AgentToolDispatcher, ToolCallView, ToolDef, ToolDispatchContext, ToolDispatchOutcome,
-    ToolError, ToolMutationClass, ToolResult,
+    ToolError, ToolMutationClass, ToolProvenance, ToolResult, ToolSourceKind,
 };
 use meerkat_mobkit::extension_state::{
     ToolBundleContext, ToolBundleFactory, ToolBundleRequirements, documents,
@@ -602,7 +602,11 @@ pub fn tool_definitions() -> Vec<ToolDef> {
                 "action":{"enum":["identity","list","describe","read","help"]},"id":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":100},"after":{"type":"string"},"query":query,
                 "topic":{"enum":["overview","operations","formulas","access","limits"]}
             }}),
-        ),
+        )
+        .with_provenance(ToolProvenance {
+            kind: ToolSourceKind::RustBundle,
+            source_id: NAMESPACE.into(),
+        }),
         ToolDef::new(
             "botus_apply",
             "Create, edit, share, transfer or delete a workbook. Use a unique request_id; retries return its receipt. All but create require id and current revision. Edits are atomic. select optionally returns result cells. Strings stay text; formulas use {formula:...}.",
@@ -613,7 +617,11 @@ pub fn tool_definitions() -> Vec<ToolDef> {
                 "operations":{"type":"array","maxItems":128,"items":{"type":"object","description":"Strict op: create_sheet, put, formula, clear, copy, fill, sort, name. Fetch help topic operations."}},
                 "select":query
             }}),
-        ),
+        )
+        .with_provenance(ToolProvenance {
+            kind: ToolSourceKind::RustBundle,
+            source_id: NAMESPACE.into(),
+        }),
     ]
 }
 
