@@ -1,5 +1,7 @@
 # Botus 1-2-3
 
+![Botus 1-2-3: a beige computer, boxed software and floppy disks, with the slogan Recalculate like it is 1989.](assets/botus-1-2-3.png)
+
 **Recalculate like it is 1989. Save like the process might restart.**
 
 A spreadsheet workspace for agents that have better things to do than ask
