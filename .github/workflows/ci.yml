@@ -1,6 +1,7 @@
 name: CI
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
@@ -11,6 +12,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.97.0
         with:
           components: rustfmt, clippy
+      - name: Locate isolated Cargo paths
+        id: cargo_paths
+        run: ./scripts/repo-cargo --print-env >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.cargo_paths.outputs.CARGO_HOME }}/registry
+            ${{ steps.cargo_paths.outputs.CARGO_HOME }}/git
+            ${{ steps.cargo_paths.outputs.CARGO_TARGET_DIR }}
+          key: ${{ runner.os }}-rust-1.97.0-core-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml', '.github/workflows/ci.yml') }}
+          restore-keys: ${{ runner.os }}-rust-1.97.0-core-
       - run: make fmt
       - run: make check
       - run: make lint
@@ -35,6 +47,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.97.0
         with:
           components: clippy
+      - name: Locate isolated Cargo paths
+        id: cargo_paths
+        run: ./scripts/repo-cargo --print-env >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.cargo_paths.outputs.CARGO_HOME }}/registry
+            ${{ steps.cargo_paths.outputs.CARGO_HOME }}/git
+            ${{ steps.cargo_paths.outputs.CARGO_TARGET_DIR }}
+          key: ${{ runner.os }}-rust-1.97.0-native-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml', '.github/workflows/ci.yml') }}
+          restore-keys: ${{ runner.os }}-rust-1.97.0-native-
       - run: make check-mobkit
       - run: make lint-mobkit
       - run: make test-mobkit

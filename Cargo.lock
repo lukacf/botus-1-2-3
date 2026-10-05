@@ -2328,7 +2328,7 @@ dependencies = [
 [[package]]
 name = "meerkat-mobkit"
 version = "0.8.45"
-source = "git+https://github.com/lukacf/meerkat-mobkit?rev=c4e60f1e936a934608de02e167226bbfa706b947#c4e60f1e936a934608de02e167226bbfa706b947"
+source = "git+https://github.com/lukacf/meerkat-mobkit?rev=ed769e54c503c3a84e734b1e2700ee263d6f54d1#ed769e54c503c3a84e734b1e2700ee263d6f54d1"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -2695,7 +2695,7 @@ dependencies = [
 [[package]]
 name = "mobkit-extension-state"
 version = "0.8.45"
-source = "git+https://github.com/lukacf/meerkat-mobkit?rev=c4e60f1e936a934608de02e167226bbfa706b947#c4e60f1e936a934608de02e167226bbfa706b947"
+source = "git+https://github.com/lukacf/meerkat-mobkit?rev=ed769e54c503c3a84e734b1e2700ee263d6f54d1#ed769e54c503c3a84e734b1e2700ee263d6f54d1"
 dependencies = [
  "async-trait",
  "rusqlite",
@@ -5544,3 +5544,8 @@ name = "zmij"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
+
+[[patch.unused]]
+name = "meerkat-store-conformance"
+version = "0.8.51"
+source = "git+https://github.com/lukacf/meerkat.git?rev=d0f15ec36b74695fc3edbc4e75711f91d3535062#d0f15ec36b74695fc3edbc4e75711f91d3535062"

@@ -103,5 +103,28 @@ test in `tests/native.rs` pauses the first missing-receipt result until the
 original edit and deletion finish, then checks receipt-only recovery. It
 also removes the editor grant before deletion and verifies that recovery
 remains unavailable. Native all-targets compilation passed against the
-coordinated upstream source overlay. Native test execution and clean pinned
-dependency CI remain pending; compilation does not establish runtime acceptance.
+coordinated upstream source overlay. Subsequent
+[pinned dependency CI](https://github.com/lukacf/botus-1-2-3/actions/runs/37347160853)
+at Botus commit `4264dcf33c01f2ad2efb368e510060b23e74c447` passed compilation,
+lint, all 27 tests (including eight native tests), and the host composition
+example. Adapter/SQLite execution does not establish full MobKit runtime
+restart acceptance; the later packaging revision requires its own CI.
+
+## Final native adapter source follow-up
+
+The unavailable-authority change preserves the runtime boundary:
+`src/native.rs:204-219,281-325` converts authority resolution failure into the
+fixed `ToolError::ExecutionFailed` message before document access, including
+help and mutation retries. Ordinary missing and denied documents share the
+generic unavailable response. `tests/native.rs:213-249` checks that unresolved
+authority cannot create a document or fetch a permitted sibling's result; it
+explicitly identifies its resolver as a fixture rather than a real MobKit
+cancellation.
+
+Empty creation is now valid at `src/native.rs:414-423`: the adapter skips an
+empty edit batch, then `content` still calls `Workbook::to_json`, which validates
+the workbook and document size before storage. No new production defect was
+found in these changes. The prior receipt recovery and commit-time replay
+protections remain present. This follow-up was source-only; no tests or builds
+were run by this reviewer. Real native child/fork integration remains subject
+to the separate MobKit acceptance suite.

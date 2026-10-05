@@ -123,6 +123,13 @@ restart. Claims in tool arguments, console labels or transcript content
 are never lineage evidence. Fork dispatchers may be shared Arcs, so resolve
 the actual caller from dispatch context every time.
 
+Persistence does not change native member lifetime. Temporary delegate
+helpers and their forks retire when delegation completes; their disappearance
+does not delete the workbook. MobKit's implicit child mobs currently have
+in-memory journals. Restart lineage guarantees apply to persistent mobs and
+members. Do not claim that a durable workbook makes an ephemeral child mob
+durable, or add a private Botus lineage archive to simulate that guarantee.
+
 Restoring a session or respawning a stable agent must not change workbook
 ownership. Deleting an agent/session must not silently delete its workbook.
 Only authorized document deletion or a defined retention process may do so.
@@ -150,7 +157,9 @@ standalone MCP deployment. Do not advertise these as implemented.
 - Access: another agent cannot list, read, change, share or delete private
   data; Reader cannot edit; Editor cannot administer; unauthorized and
   missing IDs have equivalent externally visible errors.
-- Lineage: fork_off uses the original workbook after restart, ordinary
+- Lineage: fork_off in a persistent root mob uses the original workbook after
+  restart; temporary cross-mob helpers and their forks share during their
+  native lifetime and the workbook survives their teardown. Ordinary
   children require the allowed audience, delegated access cannot amplify,
   and revoking the source grant removes inherited access.
 - Concurrency: two editors of one revision yield one winner, ACL revocation

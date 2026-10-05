@@ -27,8 +27,9 @@ spreadsheet's expense column.
 
 ## A cell of one's own
 
-Workbooks default to private ownership by a stable agent. Forks inherit
-permitted data access to the same workbook; they do not receive ownership.
+Workbooks default to private ownership by the creating agent's host identity.
+Forks inherit permitted data access to the same workbook; they do not receive
+ownership.
 Owners can explicitly share with children, other agents or a mob. Realm
 ownership does not imply that every agent can read the document.
 

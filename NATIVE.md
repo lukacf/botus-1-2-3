@@ -5,6 +5,11 @@ The optional `mobkit` feature supplies exactly two tools: `botus_read` and
 is unpublished; the native feature depends on reviewed upstream extension
 state and runtime authority changes, not a released compatibility promise.
 
+For this unpublished revision, a consuming host must copy the
+`[patch.crates-io]` table from [Cargo.toml](Cargo.toml) into its own root
+manifest. Cargo does not inherit patches from dependencies. Keep the host
+and Botus on the same patched Meerkat version so their runtime types agree.
+
 ## Host registration
 
 Register the factory before building the runtime, using the host's configured
@@ -30,6 +35,12 @@ realm binding, current caller resolution, revision checks, access control and
 retry receipts. Botus does not select a path or open a database. Unsupported
 or non-durable storage refuses activation. The native document limit is
 capped at the host's 8 MiB limit.
+
+The current SDK `GatewayContinuityStore` cannot prove identity binding
+history. Registering this bundle with that store returns
+`UnifiedRuntimeBuilderError::ExtensionAuthorityUnavailable` before document
+storage or tool factory activation. A host needs a continuity provider that
+supplies the required authority history.
 
 ## Two keys, no function-key overlay
 
@@ -98,9 +109,18 @@ same creation preserves its principal; creating a replacement worker with
 the same name does not. The host's identity authority must explicitly bind
 a durable identity to a successor before that successor can act as it.
 
-Fork access uses the current document ACL and the current native policies of
-the exact source and executing sessions. A host policy change can widen an
-existing ACL route; creation records do not freeze or duplicate that policy.
+Temporary delegate helpers and their forks retire when the delegation
+completes. MobKit implicit child mobs currently have in-memory journals.
+These agents can share the same durable workbook while active; retiring
+them leaves the workbook intact. Restart acceptance for members and forks
+of a persistent root mob is tracked separately in the MobKit tests.
+
+Fork access uses the current document ACL and the last persisted effective
+native policies of the exact source and executing sessions. The factory
+combines profile restrictions with the spawn policy in that effective field;
+the separately stored spawn policy is not the permission ceiling. A host
+policy change can widen an existing ACL route; creation records do not
+freeze or duplicate that policy.
 The host reads retained metadata even when a source session is archived.
 Missing metadata, unsupported reads or unresolved policy refuse access.
 These checks identify the executing agent and observe committed policy;
