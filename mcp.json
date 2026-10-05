@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "botus-1-2-3": {
+      "type": "stdio",
+      "command": "botus-1-2-3",
+      "args": ["mcp"]
+    }
+  }
+}

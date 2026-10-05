@@ -590,16 +590,18 @@ impl BotusTools {
 /// Descriptions stay small. Full syntax is supplied by the read tool on demand.
 pub fn tool_definitions() -> Vec<ToolDef> {
     let query = json!({"type":"object","additionalProperties":false,"properties":{
-        "sheet":{"type":"string"},"range":{"type":"string"},"columns":{"type":"array","items":{"type":"string"}},
+        "sheet":{"type":"string"},"range":{"type":["string","null"]},"columns":{"type":["array","null"],"items":{"type":"string"}},
         "view":{"enum":["values","formulas"]},"offset":{"type":"integer","minimum":0},"limit":{"type":"integer","minimum":1},
-        "filter":{"type":"object","additionalProperties":false,"required":["column","op","value"],"properties":{"column":{"type":"string"},"op":{"enum":["eq","ne","lt","le","gt","ge","contains"]},"value":{}}}
+        "filter":{"type":["object","null"],"additionalProperties":false,"required":["column","op","value"],"properties":{"column":{"type":"string"},"op":{"enum":["eq","ne","lt","le","gt","ge","contains"]},"value":{}}}
     }});
+    let mut selection = query.clone();
+    selection["type"] = json!(["object", "null"]);
     vec![
         ToolDef::new(
             "botus_read",
             "Read durable agent spreadsheets: identity, list, describe, read or help. identity returns your host-resolved caller_principal for sharing. A read returns a bounded matrix and revision. Fetch help for operation/formula/access syntax.",
             json!({"type":"object","additionalProperties":false,"required":["action"],"properties":{
-                "action":{"enum":["identity","list","describe","read","help"]},"id":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":100},"after":{"type":"string"},"query":query,
+                "action":{"enum":["identity","list","describe","read","help"]},"id":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":100},"after":{"type":["string","null"]},"query":query,
                 "topic":{"enum":["overview","operations","formulas","access","limits"]}
             }}),
         )
@@ -612,10 +614,10 @@ pub fn tool_definitions() -> Vec<ToolDef> {
             "Create, edit, share, transfer or delete a workbook. Use a unique request_id; retries return its receipt. All but create require id and current revision. Edits are atomic. select optionally returns result cells. Strings stay text; formulas use {formula:...}.",
             json!({"type":"object","additionalProperties":false,"required":["action","request_id"],"properties":{
                 "action":{"enum":["create","edit","share","transfer","delete"]},"request_id":{"type":"string"},"id":{"type":"string"},"revision":{"type":"string"},"title":{"type":"string"},
-                "owner":{"type":"object","description":"Requested recipient, authorized by host. Fetch help topic access."},
-                "access":{"type":"object","description":"Complete access replacement; owner_reach, grants, denies. Fetch help topic access."},
+                "owner":{"type":["object","null"],"description":"Requested recipient, authorized by host. Fetch help topic access."},
+                "access":{"type":["object","null"],"description":"Complete access replacement; owner_reach, grants, denies. Fetch help topic access."},
                 "operations":{"type":"array","maxItems":128,"items":{"type":"object","description":"Strict op: create_sheet, put, formula, clear, copy, fill, sort, name. Fetch help topic operations."}},
-                "select":query
+                "select":selection
             }}),
         )
         .with_provenance(ToolProvenance {

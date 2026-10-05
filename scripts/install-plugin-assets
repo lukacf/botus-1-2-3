@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+"""Copy the portable manifests and complete skill into a new plugin directory."""
+
+import argparse
+from pathlib import Path
+import shutil
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("destination", type=Path)
+    args = parser.parse_args()
+    root = Path(__file__).resolve().parent.parent
+    destination = args.destination.expanduser().resolve()
+    if destination.exists():
+        parser.error("destination already exists; choose a new plugin directory")
+    if destination.is_relative_to(root / "skills"):
+        parser.error("destination must be outside the source skill directory")
+    # Copy an explicit public asset list. Host credentials, local state and
+    # development files never participate in plugin installation.
+    destination.mkdir(parents=True)
+    for name in ("plugin.json", "mcp.json"):
+        shutil.copyfile(root / name, destination / name)
+    shutil.copytree(root / "skills", destination / "skills")
+    print(f"Plugin assets installed at {destination}")
+    print("The botus-1-2-3 executable must be on the host's PATH.")
+    print("Configure the MobKit document backend and trusted MCP caller binding.")
+
+
+if __name__ == "__main__":
+    main()

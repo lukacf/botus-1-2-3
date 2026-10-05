@@ -6,10 +6,12 @@ rust-version = "1.94"
 license = "MIT OR Apache-2.0"
 description = "A compact spreadsheet workspace for agents. Recalculate like it is 1989."
 repository = "https://github.com/lukacf/botus-1-2-3"
+include = ["src/**", "examples/**", "tests/**", "skills/**", "plugin.json", "mcp.json", "*.md", "Cargo.toml", "Cargo.lock", "LICENSE*", "Makefile", "scripts/**", "rust-toolchain.toml"]
 
 [features]
 default = []
 mobkit = ["dep:async-trait", "dep:meerkat-core", "dep:meerkat-mobkit", "dep:tokio", "serde_json/raw_value"]
+mcp = ["mobkit", "dep:axum", "dep:futures", "dep:getrandom", "dep:rmcp", "dep:reqwest", "dep:sse-stream", "dep:subtle", "dep:tokio-util"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -18,13 +20,34 @@ async-trait = { version = "0.1", optional = true }
 meerkat-core = { version = "=0.8.51", optional = true }
 meerkat-mobkit = { git = "https://github.com/lukacf/meerkat-mobkit", rev = "573e5e0030c402f5418e7bfcd4ad7b06081e762f", features = ["extension-state"], optional = true }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"], optional = true }
+axum = { version = "0.8", optional = true }
+futures = { version = "0.3", optional = true }
+getrandom = { version = "0.3", optional = true }
+# Secret custody is audited against this exact transport implementation.
+rmcp = { version = "=1.8.0", default-features = false, features = ["server", "client", "transport-io", "transport-child-process", "transport-streamable-http-server", "transport-streamable-http-client-reqwest"], optional = true }
+reqwest = { version = "0.13", default-features = false, optional = true }
+sse-stream = { version = "0.2", optional = true }
+subtle = { version = "2.6", optional = true }
+tokio-util = { version = "0.7", features = ["codec"], optional = true }
 
 [dev-dependencies]
 tempfile = "3"
+jsonschema = { version = "0.26.2", default-features = false }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "registry"] }
 
 [[example]]
 name = "native_host"
 required-features = ["mobkit"]
+
+[[example]]
+name = "mcp_host"
+required-features = ["mcp"]
+
+[[bin]]
+name = "botus-1-2-3"
+path = "src/bin/botus-1-2-3.rs"
+required-features = ["mcp"]
 
 [lints.rust]
 unsafe_code = "forbid"

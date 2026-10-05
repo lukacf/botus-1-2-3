@@ -6,7 +6,8 @@ use async_trait::async_trait;
 use botus_1_2_3::{
     Limits,
     native::{
-        ApplyAction, BotusToolFactory, MAX_TOOL_DEFINITION_BYTES, NAMESPACE, tool_definitions,
+        ApplyAction, BotusToolFactory, MAX_TOOL_DEFINITION_BYTES, NAMESPACE, ReadAction,
+        tool_definitions,
     },
 };
 use meerkat_core::{
@@ -155,6 +156,61 @@ async fn create(
     let (error, result) = send(tools, caller, "botus_apply", json!({"action":"create","request_id":"new-floppy","title":"F9 retirement fund","operations":[{"op":"put","at":"A1","values":[[1,"Unicode: räksmörgås"]]}]})).await?;
     assert!(!error, "{result}");
     Ok(result["receipt"].clone())
+}
+
+#[test]
+fn client_schemas_accept_documented_nullable_arguments() -> TestResult {
+    let definitions = tool_definitions();
+    for (name, requests) in [
+        (
+            "botus_read",
+            vec![
+                json!({"action":"list","after":null}),
+                json!({"action":"read","id":"workbook","query":{
+                    "range":null,"columns":null,"filter":null
+                }}),
+            ],
+        ),
+        (
+            "botus_apply",
+            vec![
+                json!({"action":"create","request_id":"create","title":"Budget",
+                    "owner":null,"select":null}),
+                json!({"action":"edit","request_id":"edit","id":"workbook",
+                    "revision":"current","operations":[{"op":"clear","range":"A1"}],
+                    "select":{"range":null,"columns":null,"filter":null}}),
+                json!({"action":"transfer","request_id":"transfer","id":"workbook",
+                    "revision":"current","owner":{"kind":"realm"},"access":null}),
+            ],
+        ),
+    ] {
+        let definition = definitions
+            .iter()
+            .find(|definition| definition.name == name)
+            .ok_or("missing tool definition")?;
+        let validator = jsonschema::validator_for(&definition.input_schema)
+            .map_err(|error| error.to_string())?;
+        for request in requests {
+            // Exercise the same JSON Schema contract an MCP client sees,
+            // then the actual parser. Both must accept the manual's inputs.
+            assert!(validator.is_valid(&request), "{name} rejected {request}");
+            match name {
+                "botus_read" => {
+                    let _: ReadAction = serde_json::from_value(request)?;
+                }
+                _ => {
+                    let _: ApplyAction = serde_json::from_value(request)?;
+                }
+            }
+        }
+        let wrong = if name == "botus_read" {
+            json!({"action":"read","id":"workbook","query":null})
+        } else {
+            json!({"action":"create","request_id":"create","title":"Budget","select":false})
+        };
+        assert!(!validator.is_valid(&wrong));
+    }
+    Ok(())
 }
 
 #[tokio::test]
