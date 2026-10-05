@@ -37,6 +37,11 @@ document provider's 8 MiB ceiling. JSON overhead means an 8 MiB text budget
 does not guarantee an 8 MiB payload fits. The host cannot activate the native
 adapter with a response budget below 16384 bytes.
 
+The MCP host reserves another 256 bytes for its result envelope before
+mutation preflight. With default configuration, its reported `response_bytes`
+is 261888; the minimum configured MCP response budget is 16640 bytes. Use the
+live help response for the selected host's effective limit.
+
 ## Fixed bounds and defaults
 
 | Item | Bound or default |
@@ -97,12 +102,17 @@ Engine errors at the tool boundary are grouped under `workbook`; do not
 expect their internal code to become the top-level tool code. A workbook
 payload schema mismatch can also be reported through this engine path.
 
-Missing or invalid current caller authority is a dispatch failure with the
-fixed message `Caller authority unavailable`, rather than an ordinary
-document error body. If even an error response cannot fit, dispatch fails
-with `Botus response exceeds byte limit`. The MCP/host transport may add its
-own protocol or execution-error wrapper. Treat neither failure as a workbook
-save receipt; repair the host binding/configuration through the host.
+In the native adapter, missing or invalid current caller authority is a
+dispatch failure with `Caller authority unavailable`, rather than an ordinary
+document error body. If even an error response cannot fit, native dispatch
+fails with `Botus response exceeds byte limit`.
+
+The MCP path deliberately returns generic provider or protocol failures,
+such as `Botus call authority unavailable` for an invalid correlation and
+`Botus caller authority or host service unavailable` for a dispatch failure.
+Do not depend on native error text reaching an MCP client. None of these
+failures is a workbook save receipt; repair the host binding/configuration
+through the host.
 
 Storage/transport failures can leave completion uncertain. Follow
 [exact retry rules](apply.md#atomicity-conflicts-and-retries) rather than

@@ -9,7 +9,8 @@ use botus_1_2_3::{
     native::{NAMESPACE, tool_definitions},
 };
 use meerkat_core::{
-    McpServerConfig, SessionId, ToolDispatchContext, mcp_config::McpTransportConfig,
+    CALL_ORIGIN_META_KEY, McpServerConfig, SessionId, ToolDispatchContext, WireCallOrigin,
+    mcp_config::McpTransportConfig,
 };
 use meerkat_mobkit::extension_state::{
     ToolBundleContext, ToolBundleFactory, ToolCallerResolver, documents::*,
@@ -140,12 +141,20 @@ impl Fixture {
                 "actual-native-connection",
                 name,
                 &args,
+                &WireCallOrigin::Unavailable,
                 &self.context,
             )?
             .ok_or("Destination not selected")?;
         let mut request = CallToolRequestParams::new(name.to_owned())
             .with_arguments(value.as_object().cloned().ok_or("Expected object")?);
-        request.meta = Some(Meta(prepared.metadata.clone()));
+        let mut metadata = prepared.metadata.clone();
+        // Fixture authority supplies the same explicit native unavailable
+        // projection; real host tests obtain it from the router itself.
+        metadata.insert(
+            CALL_ORIGIN_META_KEY.into(),
+            serde_json::to_value(WireCallOrigin::Unavailable)?,
+        );
+        request.meta = Some(Meta(metadata));
         Ok((request, prepared))
     }
 }
@@ -252,7 +261,14 @@ async fn stdio_tool_errors_remain_tool_errors_and_destination_cannot_be_spoofed(
     assert!(
         fixture
             .provider
-            .prepare(&spoof, "connection", "botus_read", &args, &fixture.context)?
+            .prepare(
+                &spoof,
+                "connection",
+                "botus_read",
+                &args,
+                &WireCallOrigin::Unavailable,
+                &fixture.context
+            )?
             .is_none()
     );
     assert!(
@@ -263,12 +279,40 @@ async fn stdio_tool_errors_remain_tool_errors_and_destination_cannot_be_spoofed(
                 "connection",
                 "botus_read",
                 &args,
+                &WireCallOrigin::Unavailable,
                 &ToolDispatchContext::default()
             )
             .is_err()
     );
     let (mut request, _lease) = fixture.request("botus_read", json!({"action":"identity"}))?;
     request.arguments = json!({"action":"list"}).as_object().cloned();
+    assert!(client.call_tool(request).await.is_err());
+    client.cancel().await?;
+    fixture.listener.shutdown().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn stdio_requires_exact_native_origin_and_current_caller() -> TestResult {
+    let directory = tempfile::tempdir()?;
+    let fixture = Fixture::new(&directory.path().join("host.sqlite3")).await?;
+    let client = fixture.connect().await?;
+    for origin in [
+        None,
+        Some(json!({"kind":"admitted","requester":"claimed"})),
+        Some(json!({"kind":"unavailable","subject":"claimed"})),
+    ] {
+        let (mut request, _lease) = fixture.request("botus_read", json!({"action":"identity"}))?;
+        let metadata = &mut request.meta.as_mut().ok_or("Missing metadata")?.0;
+        metadata.remove(CALL_ORIGIN_META_KEY);
+        if let Some(origin) = origin {
+            metadata.insert(CALL_ORIGIN_META_KEY.into(), origin);
+        }
+        assert!(client.call_tool(request).await.is_err());
+    }
+    // A correct wire value still cannot replace current native authority.
+    let (request, _lease) = fixture.request("botus_read", json!({"action":"identity"}))?;
+    fixture.authority.allowed.store(false, Ordering::SeqCst);
     assert!(client.call_tool(request).await.is_err());
     client.cancel().await?;
     fixture.listener.shutdown().await?;

@@ -1,6 +1,6 @@
 use super::CALL_META_KEY;
 use crate::native::MAX_REQUEST_BYTES;
-use meerkat_core::ToolDispatchContext;
+use meerkat_core::{ToolDispatchContext, WireCallOrigin};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, value::RawValue};
 use std::{
@@ -41,6 +41,7 @@ struct Entry {
     connection_id: String,
     operation: String,
     arguments: Value,
+    origin: WireCallOrigin,
     bytes: usize,
     expires: Instant,
     cancelled: CancellationToken,
@@ -97,6 +98,7 @@ impl CallRegistry {
         connection_id: &str,
         operation: &str,
         arguments: &RawValue,
+        origin: &WireCallOrigin,
         context: &ToolDispatchContext,
     ) -> io::Result<PreparedCall> {
         let origin_session = context
@@ -118,9 +120,11 @@ impl CallRegistry {
         let argument_bytes = serde_json::to_vec(&arguments)
             .map_err(io::Error::other)?
             .len();
+        let origin_bytes = serde_json::to_vec(origin).map_err(io::Error::other)?.len();
         // Charge fixed entry storage and retained strings as well as payload.
         // The independent entry ceiling also bounds allocator/map overhead.
         let bytes = argument_bytes
+            .saturating_add(origin_bytes)
             .saturating_add(connection_id.len())
             .saturating_add(operation.len())
             .saturating_add(64)
@@ -149,6 +153,7 @@ impl CallRegistry {
             connection_id: connection_id.into(),
             operation: operation.into(),
             arguments,
+            origin: *origin,
             bytes,
             expires: now + CALL_TTL,
             cancelled: cancelled.clone(),
@@ -174,6 +179,7 @@ impl CallRegistry {
     pub(super) fn consume(
         &self,
         metadata: Option<&Value>,
+        origin: Option<&Value>,
         operation: &str,
         arguments: &Value,
     ) -> io::Result<CallClaim> {
@@ -192,10 +198,16 @@ impl CallRegistry {
             .remove(&capability.token)
             .ok_or_else(unavailable)?;
         state.bytes = state.bytes.saturating_sub(entry.bytes);
+        // Decode the native codec after consuming the correlation. Its wire
+        // value is bound to this call but never establishes caller authority.
+        let origin: WireCallOrigin =
+            serde_json::from_value(origin.cloned().ok_or_else(unavailable)?)
+                .map_err(|_| unavailable())?;
         if entry.expires <= Instant::now()
             || entry.connection_id != capability.connection_id
             || entry.operation != operation
             || &entry.arguments != arguments
+            || entry.origin != origin
         {
             return Err(unavailable());
         }
@@ -226,8 +238,87 @@ mod tests {
     use serde_json::json;
     type TestResult = Result<(), Box<dyn std::error::Error>>;
 
+    impl CallRegistry {
+        fn issue_unavailable(
+            self: &Arc<Self>,
+            connection: &str,
+            operation: &str,
+            arguments: &RawValue,
+            context: &ToolDispatchContext,
+        ) -> io::Result<PreparedCall> {
+            self.issue(
+                connection,
+                operation,
+                arguments,
+                &WireCallOrigin::Unavailable,
+                context,
+            )
+        }
+
+        fn consume_unavailable(
+            &self,
+            metadata: Option<&Value>,
+            operation: &str,
+            arguments: &Value,
+        ) -> io::Result<CallClaim> {
+            self.consume(
+                metadata,
+                Some(&json!({"kind":"unavailable"})),
+                operation,
+                arguments,
+            )
+        }
+    }
+
     fn context() -> ToolDispatchContext {
         ToolDispatchContext::default().with_runtime_identity(SessionId::new(), None)
+    }
+
+    #[test]
+    fn native_origin_is_required_exact_and_does_not_supply_session_authority() -> TestResult {
+        let registry = Arc::new(CallRegistry::default());
+        let value = json!({"action":"identity"});
+        let args = serde_json::value::to_raw_value(&value)?;
+        for origin in [
+            None,
+            Some(json!({})),
+            Some(json!({"kind":"admitted","requester":"claimed"})),
+            Some(json!({"kind":"unavailable","requester":"claimed"})),
+        ] {
+            let prepared = registry.issue_unavailable("a", "botus_read", &args, &context())?;
+            assert!(
+                registry
+                    .consume(
+                        prepared.metadata.get(CALL_META_KEY),
+                        origin.as_ref(),
+                        "botus_read",
+                        &value
+                    )
+                    .is_err()
+            );
+            // An invalid projection consumes the correlation too.
+            assert!(
+                registry
+                    .consume_unavailable(prepared.metadata.get(CALL_META_KEY), "botus_read", &value)
+                    .is_err()
+            );
+        }
+        assert!(
+            registry
+                .issue_unavailable("a", "botus_read", &args, &ToolDispatchContext::default())
+                .is_err()
+        );
+        assert!(
+            registry
+                .consume(
+                    None,
+                    Some(&json!({"kind":"unavailable"})),
+                    "botus_read",
+                    &value
+                )
+                .is_err()
+        );
+        Ok(())
     }
 
     #[test]
@@ -235,7 +326,8 @@ mod tests {
         let registry = Arc::new(CallRegistry::default());
         let args = serde_json::value::to_raw_value(&json!({"action":"identity"}))?;
         for mismatch in ["arguments", "operation", "connection"] {
-            let mut prepared = registry.issue("connection-a", "botus_read", &args, &context())?;
+            let mut prepared =
+                registry.issue_unavailable("connection-a", "botus_read", &args, &context())?;
             let mut value = json!({"action":"identity"});
             let mut operation = "botus_read";
             match mismatch {
@@ -245,12 +337,12 @@ mod tests {
             }
             assert!(
                 registry
-                    .consume(prepared.metadata.get(CALL_META_KEY), operation, &value)
+                    .consume_unavailable(prepared.metadata.get(CALL_META_KEY), operation, &value)
                     .is_err()
             );
             assert!(
                 registry
-                    .consume(
+                    .consume_unavailable(
                         prepared.metadata.get(CALL_META_KEY),
                         "botus_read",
                         &json!({"action":"identity"})
@@ -259,8 +351,8 @@ mod tests {
             );
         }
         let caller = context();
-        let prepared = registry.issue("connection-a", "botus_read", &args, &caller)?;
-        let claimed = registry.consume(
+        let prepared = registry.issue_unavailable("connection-a", "botus_read", &args, &caller)?;
+        let claimed = registry.consume_unavailable(
             prepared.metadata.get(CALL_META_KEY),
             "botus_read",
             &json!({"action":"identity"}),
@@ -271,7 +363,7 @@ mod tests {
         );
         assert!(
             registry
-                .consume(
+                .consume_unavailable(
                     prepared.metadata.get(CALL_META_KEY),
                     "botus_read",
                     &json!({"action":"identity"})
@@ -288,7 +380,7 @@ mod tests {
         let args = serde_json::value::to_raw_value(&value)?;
         assert!(
             registry
-                .issue(
+                .issue_unavailable(
                     "connection-a",
                     "botus_read",
                     &args,
@@ -296,8 +388,13 @@ mod tests {
                 )
                 .is_err()
         );
-        assert!(registry.consume(None, "botus_read", &value).is_err());
-        let prepared = registry.issue("connection-a", "botus_read", &args, &context())?;
+        assert!(
+            registry
+                .consume_unavailable(None, "botus_read", &value)
+                .is_err()
+        );
+        let prepared =
+            registry.issue_unavailable("connection-a", "botus_read", &args, &context())?;
         {
             let mut state = registry.state.lock().map_err(|_| unavailable())?;
             for entry in state.entries.values_mut() {
@@ -306,32 +403,34 @@ mod tests {
         }
         assert!(
             registry
-                .consume(prepared.metadata.get(CALL_META_KEY), "botus_read", &value)
+                .consume_unavailable(prepared.metadata.get(CALL_META_KEY), "botus_read", &value)
                 .is_err()
         );
-        let prepared = registry.issue("connection-a", "botus_read", &args, &context())?;
+        let prepared =
+            registry.issue_unavailable("connection-a", "botus_read", &args, &context())?;
         let metadata = prepared.metadata.clone();
         drop(prepared);
         assert!(
             registry
-                .consume(metadata.get(CALL_META_KEY), "botus_read", &value)
+                .consume_unavailable(metadata.get(CALL_META_KEY), "botus_read", &value)
                 .is_err()
         );
-        let prepared = registry.issue("connection-a", "botus_read", &args, &context())?;
+        let prepared =
+            registry.issue_unavailable("connection-a", "botus_read", &args, &context())?;
         assert!(
             CallRegistry::default()
-                .consume(prepared.metadata.get(CALL_META_KEY), "botus_read", &value)
+                .consume_unavailable(prepared.metadata.get(CALL_META_KEY), "botus_read", &value)
                 .is_err()
         );
         registry.close();
         assert!(
             registry
-                .consume(prepared.metadata.get(CALL_META_KEY), "botus_read", &value)
+                .consume_unavailable(prepared.metadata.get(CALL_META_KEY), "botus_read", &value)
                 .is_err()
         );
         assert!(
             registry
-                .issue("connection-a", "botus_read", &args, &context())
+                .issue_unavailable("connection-a", "botus_read", &args, &context())
                 .is_err()
         );
         Ok(())
@@ -346,8 +445,12 @@ mod tests {
             "private-prompt".into(),
             json!("do not retain"),
         )]));
-        let prepared = registry.issue("connection-a", "botus_read", &args, &caller)?;
-        let claim = registry.consume(prepared.metadata.get(CALL_META_KEY), "botus_read", &value)?;
+        let prepared = registry.issue_unavailable("connection-a", "botus_read", &args, &caller)?;
+        let claim = registry.consume_unavailable(
+            prepared.metadata.get(CALL_META_KEY),
+            "botus_read",
+            &value,
+        )?;
         assert!(claim.context.turn_metadata("private-prompt").is_none());
         assert!(!claim.cancelled.is_cancelled());
         drop(prepared);
@@ -363,12 +466,16 @@ mod tests {
         let caller = context();
         let mut prepared = Vec::new();
         for _ in 0..MAX_PENDING_CALLS {
-            prepared.push(registry.issue("a", "botus_read", &args, &caller)?);
+            prepared.push(registry.issue_unavailable("a", "botus_read", &args, &caller)?);
         }
-        assert!(registry.issue("a", "botus_read", &args, &caller).is_err());
+        assert!(
+            registry
+                .issue_unavailable("a", "botus_read", &args, &caller)
+                .is_err()
+        );
         prepared.clear();
         assert_eq!(registry.state.lock().map_err(|_| unavailable())?.bytes, 0);
-        let _next = registry.issue("a", "botus_read", &args, &caller)?;
+        let _next = registry.issue_unavailable("a", "botus_read", &args, &caller)?;
         // Exercise the byte ceiling independently of the entry ceiling.
         registry
             .state
@@ -377,7 +484,11 @@ mod tests {
             .entries
             .values_mut()
             .for_each(|entry| entry.bytes = MAX_PENDING_BYTES);
-        assert!(registry.issue("a", "botus_read", &args, &caller).is_err());
+        assert!(
+            registry
+                .issue_unavailable("a", "botus_read", &args, &caller)
+                .is_err()
+        );
         Ok(())
     }
 }

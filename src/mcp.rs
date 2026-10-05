@@ -22,8 +22,14 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use futures::StreamExt;
-use meerkat_core::{AgentToolDispatcher, McpServerConfig, ToolCallView, ToolDispatchContext};
-use meerkat_mobkit::extension_state::{ToolBundleContext, ToolBundleFactory};
+use meerkat_core::{
+    AgentToolDispatcher, CALL_ORIGIN_META_KEY, McpServerConfig, ToolCallView, ToolDispatchContext,
+    ToolMutationClass, WireCallOrigin,
+};
+use meerkat_mcp::{McpCallContext, McpCallContextError, McpCallContextProvider, McpCallTarget};
+use meerkat_mobkit::extension_state::{
+    ChildMcpAvailability, HostMcpDocumentBinding, ToolBundleContext, ToolBundleFactory,
+};
 use rmcp::{
     ErrorData, RoleClient, RoleServer, ServerHandler, ServiceExt,
     model::{
@@ -183,8 +189,39 @@ impl std::fmt::Debug for BotusMcpListener {
 }
 
 impl BotusMcpListener {
+    /// Register the host service without persisting this process's endpoint
+    /// or relay credential. Profiles select the returned public descriptor;
+    /// MobKit resolves its declared environment slots at each agent build.
+    /// Child availability exposes the tools, never a workbook access grant.
+    pub fn document_binding(
+        &self,
+        command: impl Into<String>,
+        children: ChildMcpAvailability,
+    ) -> io::Result<HostMcpDocumentBinding> {
+        let runtime = self.relay_config(command);
+        let provider = Arc::new(self.call_context_provider(runtime.clone())?);
+        let mut public = runtime.clone();
+        let meerkat_core::mcp_config::McpTransportConfig::Stdio(stdio) = &mut public.transport
+        else {
+            return Err(io::Error::other("Invalid Botus relay transport"));
+        };
+        for value in stdio.env.values_mut() {
+            value.clear();
+        }
+        HostMcpDocumentBinding::new(
+            public,
+            runtime,
+            BotusToolFactory::requirements(),
+            self.host.clone(),
+            provider,
+            children,
+        )
+        .map_err(io::Error::other)
+    }
+
     /// The host passes this configuration directly to its MCP router. Do not
-    /// put the resulting environment map in prompts, logs or source control.
+    /// put the resulting environment map in profiles, prompts, logs or source
+    /// control. Prefer `document_binding` for automatic MobKit composition.
     pub fn relay_config(&self, command: impl Into<String>) -> McpServerConfig {
         McpServerConfig::stdio(
             "botus-1-2-3",
@@ -211,9 +248,10 @@ impl BotusMcpListener {
         if stdio.env.get(ENDPOINT_ENV) != Some(&self.endpoint)
             || stdio.env.get(RELAY_TOKEN_ENV) != Some(&self.relay_token)
             || stdio.args != ["mcp"]
+            || !config.tool_names.is_empty()
         {
             return Err(io::Error::other(
-                "Botus relay configuration does not match this listener",
+                "Botus requires this listener's exact relay and canonical tool names",
             ));
         }
         Ok(BotusMcpContextProvider {
@@ -264,14 +302,51 @@ impl BotusMcpContextProvider {
         connection_id: &str,
         raw_operation: &str,
         arguments: &serde_json::value::RawValue,
+        origin: &WireCallOrigin,
         context: &ToolDispatchContext,
     ) -> io::Result<Option<PreparedCall>> {
         if config != &self.config {
             return Ok(None);
         }
         self.registry
-            .issue(connection_id, raw_operation, arguments, context)
+            .issue(connection_id, raw_operation, arguments, origin, context)
             .map(Some)
+    }
+}
+
+#[async_trait::async_trait]
+impl McpCallContextProvider for BotusMcpContextProvider {
+    async fn prepare(
+        &self,
+        target: McpCallTarget<'_>,
+        call: ToolCallView<'_>,
+        context: &ToolDispatchContext,
+    ) -> Result<Option<McpCallContext>, McpCallContextError> {
+        self.prepare(
+            target.config,
+            &target.connection_id.to_string(),
+            target.raw_operation,
+            call.args,
+            target.origin,
+            context,
+        )
+        .map(|prepared| prepared.map(|call| McpCallContext::new(call.metadata, call.lease)))
+        .map_err(|_| McpCallContextError::Unavailable)
+    }
+
+    fn tool_mutation_class(
+        &self,
+        config: &McpServerConfig,
+        raw_operation: &str,
+    ) -> ToolMutationClass {
+        if config != &self.config {
+            return ToolMutationClass::Unknown;
+        }
+        match raw_operation {
+            "botus_read" => ToolMutationClass::ReadOnly,
+            "botus_apply" => ToolMutationClass::Mutating,
+            _ => ToolMutationClass::Unknown,
+        }
     }
 }
 
@@ -439,6 +514,7 @@ impl ServerHandler for HostHandler {
             .registry
             .consume(
                 capability.map(|capability| &capability.0),
+                context.meta.0.get(CALL_ORIGIN_META_KEY),
                 request.name.as_ref(),
                 &arguments,
             )

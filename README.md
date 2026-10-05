@@ -32,7 +32,8 @@ every tool call. All chapters travel with the skill.
 `plugin.json` and `mcp.json` use the Agent Plugins 1.0.0 format. The MCP entry
 point is `botus-1-2-3 mcp`. The optional `mcp` Cargo feature builds that
 executable; the default engine build remains independent of the runtime.
-The MCP implementation is being qualified against the
+The [MCP host guide](MCP.md) explains composition, persistence and caller
+authority. The implementation is being qualified against the
 [transport and caller-context contract](MCP-DESIGN.md).
 
 Copy the manifests and complete skill to a new plugin directory with:
@@ -78,8 +79,8 @@ format. WK1 is an optional future novelty. No binary compatibility is
 claimed. No lotus flowers, spreadsheets or 5.25-inch floppies were harmed
 in the design of this package.
 
-Native bundle activation opts the host's local continuity store into schema
-v3 identity history. Earlier binaries which support only v1/v2 then refuse
+Native bundle or MCP document-binding activation opts the host's local
+continuity store into schema v3 identity history. Earlier binaries which support only v1/v2 then refuse
 that database. Ordinary opens and head-only migration do not opt in. See the
 [native guide](NATIVE.md) for the compatibility boundary.
 

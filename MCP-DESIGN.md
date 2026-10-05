@@ -1,7 +1,7 @@
 # MCP without a second filing cabinet
 
-Status: implementation contract. Installation and verification instructions
-belong in the MCP guide once the implementation passes its acceptance tests.
+Status: implementation contract. The [MCP guide](MCP.md) records host setup
+and the separate runtime qualification requirement.
 
 The package supplies a real MCP server with exactly `botus_read` and
 `botus_apply`, an installable stdio entry point, package manifests, and a
@@ -46,10 +46,18 @@ ordinary MCP behavior. A selected destination without required caller context
 refuses before sending the call. Matching only a server's display name is
 insufficient.
 
+Profiles persist only a public launch descriptor with a stable binding marker
+and empty declared environment slots. MobKit reconstructs the exact current
+process binding at each build. Runtime endpoints and relay credentials never
+belong in durable profiles. Initial document bindings reject tool aliases so
+the dispatcher classification and retained native policy share canonical names.
+
 Any forwarded admitted origin uses the shared Meerkat `CallOrigin` /
 `WireCallOrigin` contract. Requester attribution and the current executing
 session remain distinct. Session identity cannot manufacture an admitted
-human requester, grant chain or controller authority.
+human requester, grant chain or controller authority. The current codec emits
+only the exact `{"kind":"unavailable"}` projection. The endpoint checks it
+against the issued correlation; it supplies no additional authority.
 
 ## One call, one authority binding
 

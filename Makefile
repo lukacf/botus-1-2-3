@@ -1,6 +1,6 @@
 CARGO := ./scripts/repo-cargo
 
-.PHONY: check test lint fmt check-mobkit test-mobkit lint-mobkit check-mcp test-mcp lint-mcp
+.PHONY: check test lint fmt check-mobkit test-mobkit lint-mobkit check-mcp test-mcp lint-mcp test-mcp-host
 check:
 	$(CARGO) check --locked --all-targets
 test:
@@ -21,3 +21,7 @@ test-mcp:
 	$(CARGO) test --locked --all-targets --features mcp
 lint-mcp:
 	$(CARGO) clippy --locked --all-targets --features mcp -- -D warnings
+
+# Explicit full host integration lane; the default engine lane stays small.
+test-mcp-host:
+	$(CARGO) test --locked --all-targets --features mcp-host-tests
