@@ -31,14 +31,20 @@ impl ProtectedInputCodec {
 
     fn parse(line: String) -> io::Result<ClientJsonRpcMessage> {
         // Never include the source text or serde's path in diagnostic output.
-        let mut message: ClientJsonRpcMessage = serde_json::from_str(&line)
+        let mut value: serde_json::Value = serde_json::from_str(&line)
+            .map_err(|_| io::Error::other("Invalid MCP JSON-RPC frame"))?;
+        // Strip before typed dispatch so a reserved capability on ping, list,
+        // or a notification cannot reach rmcp's payload-printing log paths.
+        let capability = value
+            .pointer_mut("/params/_meta")
+            .and_then(serde_json::Value::as_object_mut)
+            .and_then(|metadata| metadata.remove(CALL_META_KEY));
+        let mut message: ClientJsonRpcMessage = serde_json::from_value(value)
             .map_err(|_| io::Error::other("Invalid MCP JSON-RPC frame"))?;
         if let ClientJsonRpcMessage::Request(message) = &mut message {
             if let ClientRequest::CallToolRequest(request) = &mut message.request {
-                if let Some(metadata) = request.params.meta.as_mut() {
-                    if let Some(capability) = metadata.0.remove(CALL_META_KEY) {
-                        request.extensions.insert(ProtectedCapability(capability));
-                    }
+                if let Some(capability) = capability {
+                    request.extensions.insert(ProtectedCapability(capability));
                 }
             }
         }
@@ -178,6 +184,50 @@ mod tests {
             .err()
             .ok_or("Expected malformed error")?;
         assert!(!error.to_string().contains(token));
+        Ok(())
+    }
+
+    #[test]
+    fn reserved_capability_on_other_methods_is_dropped_before_logging()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let token = "sensitive-wrong-method-capability";
+        let metadata = json!({CALL_META_KEY:{"token":token,"connection_id":"c"}});
+        let messages = [
+            json!({"jsonrpc":"2.0","id":1,"method":"ping","params":{"_meta":metadata}}),
+            json!({"jsonrpc":"2.0","id":2,"method":"tools/list","params":{"_meta":metadata}}),
+            json!({"jsonrpc":"2.0","method":"notifications/initialized","params":{"_meta":metadata}}),
+            json!({"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":3,"_meta":metadata}}),
+        ];
+        for value in messages {
+            let mut codec = ProtectedInputCodec::new(4096);
+            let mut buffer = BytesMut::from(format!("{value}\n").as_bytes());
+            let message = codec.decode(&mut buffer)?.ok_or("Missing message")?;
+            assert!(!format!("{message:?}").contains(token));
+            assert!(!serde_json::to_string(&message)?.contains(token));
+            match message {
+                ClientJsonRpcMessage::Request(message) => {
+                    use rmcp::model::GetExtensions;
+                    assert!(
+                        message
+                            .request
+                            .extensions()
+                            .get::<ProtectedCapability>()
+                            .is_none()
+                    );
+                }
+                ClientJsonRpcMessage::Notification(message) => {
+                    use rmcp::model::GetExtensions;
+                    assert!(
+                        message
+                            .notification
+                            .extensions()
+                            .get::<ProtectedCapability>()
+                            .is_none()
+                    );
+                }
+                _ => return Err("Expected request or notification".into()),
+            }
+        }
         Ok(())
     }
 }
