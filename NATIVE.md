@@ -69,9 +69,9 @@ revision. Read with:
 {"action":"read","id":"document-id-from-receipt","query":{"range":"A1:D2"}}
 ```
 
-`botus_read` also accepts `list`, `describe` and `help`. Fetch detailed help
-on demand with `{"action":"help","topic":"operations"}`. Other topics are
-`overview`, `formulas`, `access` and `limits`. The access help examples are
+`botus_read` also accepts `identity`, `list`, `describe` and `help`. Fetch
+detailed help on demand with `{"action":"help","topic":"operations"}`.
+Other topics are `overview`, `formulas`, `access` and `limits`. The access help examples are
 serialized from the actual host types. The concise initial tool definitions
 have a 6 KiB combined regression budget.
 
@@ -81,6 +81,66 @@ calculated cells and change statistics. Read again for current cells. A
 changed request under the same ID fails. A concurrent duplicate which loses
 the commit race also returns receipt-only. Only the actual commit returns
 newly calculated cells, so the virtual F9 key cannot print a phantom result.
+
+## Share with a child's reported principal
+
+A child can call `botus_read` with `{"action":"identity"}` and report the
+returned `caller_principal` to its parent. This action accepts no other
+fields and returns only the host-resolved tagged principal, subject to the
+same response byte bound as other reads. It does not create a workbook.
+A Worker principal response has this shape:
+
+```json
+{
+  "caller_principal":{
+    "kind":"worker",
+    "value":{
+      "mob_id":"child-reported-mob-id",
+      "member_id":"child-reported-member-id",
+      "creation_id":"child-reported-creation-id"
+    }
+  }
+}
+```
+
+Copy the entire reported principal into the grant recipient. Never build a
+Worker principal from a display name, session ID or guessed creation ID.
+The following `botus_apply` request grants only that worker Reader access:
+
+```json
+{
+  "action":"share",
+  "request_id":"share-with-helper",
+  "id":"workbook-id",
+  "revision":"current-revision",
+  "access":{
+    "owner_reach":"forks",
+    "grants":[{
+      "audience":{
+        "kind":"agent",
+        "value":{
+          "principal":{
+            "kind":"worker",
+            "value":{
+              "mob_id":"child-reported-mob-id",
+              "member_id":"child-reported-member-id",
+              "creation_id":"child-reported-creation-id"
+            }
+          },
+          "reach":"self_only"
+        }
+      },
+      "role":"reader"
+    }],
+    "denies":[]
+  }
+}
+```
+
+Sharing replaces the complete access policy, so retain any existing grants
+and denies you still need. A reported principal selects a recipient; it
+never authenticates the caller or confers management authority. Every call
+still resolves its own actor from host dispatch context.
 
 ## Current authority, every time
 
@@ -144,10 +204,18 @@ shipping a host integration.
 
 The unavailable-authority regression supplies a valid origin session whose
 test resolver returns `AuthorityUnavailable`. It checks the fixed infrastructure
-error for create, help, read and retry, an empty real SQLite document list after
-the failed create, and a successful sibling create through the same dispatcher.
+error for create, identity, help, read and retry, an empty real SQLite document
+list after the failed create, and a successful sibling create through the
+same dispatcher.
 It does not itself cancel or reopen a real native identity. MobKit's separate
 cancellation and restart tests establish that lifecycle behavior.
+
+The identity regression uses a parent and a Worker child from that explicit
+test authority. Parent/child/parent calls through one shared dispatcher must
+return their distinct current principals without creating any documents.
+It covers maximal escaped Worker identifiers, the serialized response bound
+and strict rejection of caller-authority input fields. This fixture does not
+replace MobKit's runtime provenance tests.
 
 The adapter retry regression also controls this ordering: an identical edit
 commits after a missing-receipt lookup, then the owner deletes the document

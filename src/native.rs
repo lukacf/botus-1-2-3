@@ -34,6 +34,7 @@ fn list_limit() -> usize {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ReadAction {
+    Identity {},
     List {
         #[serde(default = "list_limit")]
         limit: usize,
@@ -345,6 +346,11 @@ impl BotusTools {
         request: ReadAction,
     ) -> Result<ToolDispatchOutcome> {
         match request {
+            ReadAction::Identity {} => self.output(
+                call_id,
+                &json!({"caller_principal":caller.principal()}),
+                false,
+            ),
             ReadAction::List { limit, after } => {
                 if limit == 0 || limit > 100 {
                     return Err(Failure::invalid("List limit must be between 1 and 100"));
@@ -591,9 +597,9 @@ pub fn tool_definitions() -> Vec<ToolDef> {
     vec![
         ToolDef::new(
             "botus_read",
-            "Read durable agent spreadsheets: list, describe, read or help. A read returns a bounded matrix and revision. Fetch help for operation/formula/access syntax.",
+            "Read durable agent spreadsheets: identity, list, describe, read or help. identity returns your host-resolved caller_principal for sharing. A read returns a bounded matrix and revision. Fetch help for operation/formula/access syntax.",
             json!({"type":"object","additionalProperties":false,"required":["action"],"properties":{
-                "action":{"enum":["list","describe","read","help"]},"id":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":100},"after":{"type":"string"},"query":query,
+                "action":{"enum":["identity","list","describe","read","help"]},"id":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":100},"after":{"type":"string"},"query":query,
                 "topic":{"enum":["overview","operations","formulas","access","limits"]}
             }}),
         ),
@@ -614,7 +620,7 @@ pub fn tool_definitions() -> Vec<ToolDef> {
 fn help(topic: HelpTopic, limits: &Limits) -> Json {
     match topic {
         HelpTopic::Overview => {
-            json!({"help":"Use botus_apply create with title, request_id and optional operations. Then use returned document_id and revision for edit/share/transfer/delete. botus_read list returns accessible documents; describe gives sheets/names/access; read takes id and query. query fields: sheet (Sheet1), range (occupied bounds), columns (letters), view (values/formulas), offset (physical rows), limit (100), filter {column,op,value}. Values are number, Unicode text, boolean or null. Formula cells are {formula:\"=SUM(A1:A9)\"}. Dates are ISO text. Replay returns the original receipt only; reread for current cells. No export, macros or WK1 compatibility. Help topics: operations, formulas, access, limits."})
+            json!({"help":"Use botus_apply create with title, request_id and optional operations. Then use returned document_id and revision for edit/share/transfer/delete. botus_read identity returns the current caller_principal for use as a sharing recipient, never as authentication. list returns accessible documents; describe gives sheets/names/access; read takes id and query. query fields: sheet (Sheet1), range (occupied bounds), columns (letters), view (values/formulas), offset (physical rows), limit (100), filter {column,op,value}. Values are number, Unicode text, boolean or null. Formula cells are {formula:\"=SUM(A1:A9)\"}. Dates are ISO text. Replay returns the original receipt only; reread for current cells. No export, macros or WK1 compatibility. Help topics: operations, formulas, access, limits."})
         }
         HelpTopic::Operations => json!({"operations":[
             {"op":"create_sheet","name":"Budget"}, {"op":"put","at":"A1","values":[["Floppy reserve",3,true,null,{"formula":"=B1*4"}]]},
@@ -633,9 +639,32 @@ fn help(topic: HelpTopic, limits: &Limits) -> Json {
                 principal: agent.clone(),
                 reach: Reach::Forks,
             };
-            json!({"help":"Owner is administrative, separate from read/edit grants. Default owner is the actual caller and owner_reach is forks. The host validates requested recipients. access completely replaces owner_reach/grants/denies; omitted arrays are empty. Reach is self_only, forks or descendants. A read denial also blocks edit. Readers cannot edit; editors cannot administer. Forks use the original workbook ID, inherit capped grants, never ownership. Spawned children need descendants or explicit grants. Current host policy and revocation always apply. Actor, realm, ancestry and admin fields are never accepted as caller claims.","examples":{
+            let worker = Principal::Worker {
+                mob_id: "child-reported-mob-id".into(),
+                member_id: "child-reported-member-id".into(),
+                creation_id: "child-reported-creation-id".into(),
+            };
+            let share_with_worker = ApplyAction::Share {
+                request_id: "share-with-helper".into(),
+                id: DocumentId("workbook-id".into()),
+                revision: Revision("current-revision".into()),
+                access: DocumentAccess {
+                    owner_reach: Reach::Forks,
+                    grants: vec![Grant {
+                        audience: Audience::Agent {
+                            principal: worker.clone(),
+                            reach: Reach::SelfOnly,
+                        },
+                        role: Role::Reader,
+                    }],
+                    denies: vec![],
+                },
+            };
+            json!({"help":"Owner is administrative, separate from read/edit grants. Default owner is the actual caller and owner_reach is forks. The host validates requested recipients. access completely replaces owner_reach/grants/denies; omitted arrays are empty. Reach is self_only, forks or descendants. A read denial also blocks edit. Readers cannot edit; editors cannot administer. Forks use the original workbook ID, inherit capped grants, never ownership. Spawned children need descendants or explicit grants. Ask the child to call botus_read identity and copy its exact caller_principal into the grant recipient. This reported value selects a recipient; it never authenticates the caller. Never derive Worker fields from display names or session IDs. Current host policy and revocation always apply. Actor, realm, ancestry and admin fields are never accepted as caller claims.","examples":{
                 "owners":[Owner::Agent(agent),Owner::Mob("mob-id".into()),Owner::Realm],
                 "audiences":[audience.clone(),Audience::Mob("mob-id".into()),Audience::Realm],
+                "worker_identity":{"caller_principal":worker},
+                "share_with_worker":share_with_worker,
                 "access":DocumentAccess { owner_reach: Reach::Forks, grants: vec![Grant {audience, role:Role::Reader}], denies: vec![Deny {audience:Audience::Agent {principal:Principal::Agent("revoked-agent".into()),reach:Reach::Descendants},operation:DeniedOperation::Read}] }
             }})
         }

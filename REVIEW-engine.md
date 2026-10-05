@@ -128,3 +128,19 @@ found in these changes. The prior receipt recovery and commit-time replay
 protections remain present. This follow-up was source-only; no tests or builds
 were run by this reviewer. Real native child/fork integration remains subject
 to the separate MobKit acceptance suite.
+
+## Caller principal discovery source review
+
+Independent source review of the `identity` read action found no actionable
+defects. It uses the existing per-call resolver and returns only the tagged
+`caller.principal()` through the same full-wire response bound. Unavailable
+authority still produces the fixed infrastructure error. Worker sharing
+examples are typed recipients, never input to caller resolution.
+
+The added parent/child/parent regression uses one shared dispatcher and
+checks distinct current principals, resolver call count, maximal escaped
+identifiers, response bounds and empty document lists. Existing tests now
+cover strict identity inputs, typed Worker sharing help and unavailable
+identity. There are still exactly two definitions with a 6 KiB regression
+budget. This review covered source, tests and documentation without running
+tests or builds; execution is recorded separately in PR CI.

@@ -5,7 +5,9 @@
 use async_trait::async_trait;
 use botus_1_2_3::{
     Limits,
-    native::{BotusToolFactory, MAX_TOOL_DEFINITION_BYTES, NAMESPACE, tool_definitions},
+    native::{
+        ApplyAction, BotusToolFactory, MAX_TOOL_DEFINITION_BYTES, NAMESPACE, tool_definitions,
+    },
 };
 use meerkat_core::{
     AgentToolDispatcher, SessionId, ToolCallView, ToolDispatchContext, ToolError, ToolMutationClass,
@@ -175,6 +177,25 @@ async fn schemas_are_compact_and_authority_is_never_an_argument() -> TestResult 
     let _: Vec<Owner> = serde_json::from_value(access_help.1["examples"]["owners"].clone())?;
     let _: Vec<Audience> = serde_json::from_value(access_help.1["examples"]["audiences"].clone())?;
     let _: DocumentAccess = serde_json::from_value(access_help.1["examples"]["access"].clone())?;
+    let worker: Principal = serde_json::from_value(
+        access_help.1["examples"]["worker_identity"]["caller_principal"].clone(),
+    )?;
+    assert!(matches!(worker, Principal::Worker { .. }));
+    let ApplyAction::Share { access, .. } =
+        serde_json::from_value(access_help.1["examples"]["share_with_worker"].clone())?
+    else {
+        return Err("expected a worker sharing example".into());
+    };
+    assert_eq!(
+        access.grants,
+        vec![Grant {
+            audience: Audience::Agent {
+                principal: worker,
+                reach: Reach::SelfOnly,
+            },
+            role: Role::Reader,
+        }]
+    );
     let operation_help = send(
         &tools,
         &user.0,
@@ -199,12 +220,111 @@ async fn schemas_are_compact_and_authority_is_never_an_argument() -> TestResult 
         json!({"action":"help"}),
     )
     .await?;
-    for forged in ["actor", "realm", "ancestry", "administrator", "path"] {
-        let mut request = json!({"action":"list"});
-        request[forged] = json!("pretend");
-        let (error, result) = send(&tools, &user.0, "botus_read", request).await?;
-        assert!(error);
-        assert_eq!(result["error"]["code"], "invalid_input");
+    for action in ["identity", "list"] {
+        for forged in [
+            "actor",
+            "realm",
+            "ancestry",
+            "administrator",
+            "path",
+            "caller_principal",
+            "principal",
+            "mob_id",
+            "member_id",
+            "creation_id",
+            "session_id",
+            "id",
+            "query",
+        ] {
+            let mut request = json!({"action":action});
+            request[forged] = json!("pretend");
+            let (error, result) = send(&tools, &user.0, "botus_read", request).await?;
+            assert!(error, "{action} accepted {forged}");
+            assert_eq!(result["error"]["code"], "invalid_input");
+        }
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn identity_reports_current_parent_and_worker_principals_without_documents() -> TestResult {
+    let temporary = tempfile::tempdir()?;
+    let parent = actor("parent-bookkeeper")?;
+    // These are trusted fixture facts, never inferred from the dispatch session.
+    // Maximal escaped identifiers also exercise the bounded wire response.
+    let worker = Principal::Worker {
+        mob_id: "\\".repeat(MAX_IDENTIFIER_BYTES),
+        member_id: "\"".repeat(MAX_IDENTIFIER_BYTES),
+        creation_id: "c".repeat(MAX_IDENTIFIER_BYTES),
+    };
+    let child = (
+        ToolDispatchContext::default().with_runtime_identity(SessionId::new(), None),
+        HostAccessContext::new(
+            "beige-realm",
+            worker.clone(),
+            VerifiedLineage::derived(vec![LineageLink {
+                child: worker,
+                parent: parent.1.principal().clone(),
+                kind: EdgeKind::Spawn,
+                ceiling: Some(Role::Editor),
+            }])?,
+            HostPolicy::ALLOW,
+        )?,
+    );
+    let authority = authority(&[parent.clone(), child.clone()])?;
+    let limits = Limits {
+        max_response_bytes: 16 * 1024,
+        ..Limits::default()
+    };
+    let max_response_bytes = limits.max_response_bytes;
+    let tools = tools(
+        &temporary.path().join("host.sqlite3"),
+        authority.clone(),
+        limits,
+    )?;
+    let request = serde_json::value::to_raw_value(&json!({"action":"identity"}))?;
+    for caller in [&parent, &child, &parent] {
+        let outcome = tools
+            .dispatch_with_context(
+                ToolCallView {
+                    id: "identity-call",
+                    name: "botus_read",
+                    args: &request,
+                },
+                &caller.0,
+            )
+            .await?;
+        assert!(!outcome.result.is_error);
+        assert!(serde_json::to_vec(&outcome.result)?.len() <= max_response_bytes);
+        let encoded = serde_json::to_value(&outcome.result)?;
+        let content = encoded["content"].as_str().ok_or("expected text result")?;
+        let result: Value = serde_json::from_str(content)?;
+        assert_eq!(result, json!({"caller_principal":caller.1.principal()}));
+        let reported: Principal = serde_json::from_value(result["caller_principal"].clone())?;
+        assert_eq!(&reported, caller.1.principal());
+    }
+    assert_eq!(authority.calls.load(Ordering::SeqCst), 3);
+
+    // Oversized envelope bytes cannot bypass the same bound used by other reads.
+    let large_call_id = "\"".repeat(max_response_bytes);
+    let rejected = tools
+        .dispatch_with_context(
+            ToolCallView {
+                id: &large_call_id,
+                name: "botus_read",
+                args: &request,
+            },
+            &child.0,
+        )
+        .await;
+    assert!(matches!(
+        rejected,
+        Err(ToolError::ExecutionFailed { message }) if message == "Botus response exceeds byte limit"
+    ));
+    for caller in [&parent, &child] {
+        let (error, page) = send(&tools, &caller.0, "botus_read", json!({"action":"list"})).await?;
+        assert!(!error, "{page}");
+        assert_eq!(page["documents"], json!([]));
     }
     Ok(())
 }
@@ -230,6 +350,13 @@ async fn unavailable_authority_is_infrastructure_feedback_and_sibling_remains_us
         &unavailable.0,
         "botus_read",
         json!({"action":"help"}),
+    )
+    .await?;
+    assert_authority_unavailable(
+        &tools,
+        &unavailable.0,
+        "botus_read",
+        json!({"action":"identity"}),
     )
     .await?;
     let (error, empty) = send(&tools, &permitted.0, "botus_read", json!({"action":"list"})).await?;

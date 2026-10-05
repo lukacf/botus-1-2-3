@@ -70,11 +70,20 @@ must remain visible. Unsupported syntax must never become a zero or blank.
 
 ## Two agent tools
 
-`botus_read`: list accessible workbooks, describe a workbook, read a bounded
-range/query, or load help. `botus_apply`: create a workbook, atomically edit
-one, or request an authorized sharing/ownership operation. All stored writes
-require the current revision except creation. Edits may request a small
-selection of result cells so recalculation does not require another call.
+`botus_read`: report the current caller principal, list accessible workbooks,
+describe a workbook, read a bounded range/query, or load help. `botus_apply`:
+create a workbook, atomically edit one, or request an authorized
+sharing/ownership operation. All stored writes require the current revision
+except creation. Edits may request a small selection of result cells so
+recalculation does not require another call.
+
+The `identity` read action accepts only `{"action":"identity"}` and returns
+`{"caller_principal": <tagged host Principal>}` from the already-resolved
+host access context. Return no realm, policy, ancestry or other host metadata,
+and create no scratch document. A parent may use the exact child-reported
+Agent or Worker principal as a grant recipient, never as authentication.
+Never synthesize Worker identity from names or session IDs. The same caller
+resolution, unavailable-authority behavior and output bounds apply.
 
 Tool inputs contain document IDs, data and intended actions. They never
 contain authoritative actor identity, realm, mob membership, ancestry,
@@ -157,6 +166,9 @@ standalone MCP deployment. Do not advertise these as implemented.
 - Access: another agent cannot list, read, change, share or delete private
   data; Reader cannot edit; Editor cannot administer; unauthorized and
   missing IDs have equivalent externally visible errors.
+- Identity: parent/child/parent reads through the same shared dispatcher
+  return only each call's resolved principal without creating documents;
+  unknown caller-authority input fields reject.
 - Lineage: fork_off in a persistent root mob uses the original workbook after
   restart; temporary cross-mob helpers and their forks share during their
   native lifetime and the workbook survives their teardown. Ordinary
