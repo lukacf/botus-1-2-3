@@ -2328,7 +2328,7 @@ dependencies = [
 [[package]]
 name = "meerkat-mobkit"
 version = "0.8.45"
-source = "git+https://github.com/lukacf/meerkat-mobkit?rev=0b4cbb0bbf1bc34d784e9615fc82475de646af83#0b4cbb0bbf1bc34d784e9615fc82475de646af83"
+source = "git+https://github.com/lukacf/meerkat-mobkit?rev=573e5e0030c402f5418e7bfcd4ad7b06081e762f#573e5e0030c402f5418e7bfcd4ad7b06081e762f"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -2695,7 +2695,7 @@ dependencies = [
 [[package]]
 name = "mobkit-extension-state"
 version = "0.8.45"
-source = "git+https://github.com/lukacf/meerkat-mobkit?rev=0b4cbb0bbf1bc34d784e9615fc82475de646af83#0b4cbb0bbf1bc34d784e9615fc82475de646af83"
+source = "git+https://github.com/lukacf/meerkat-mobkit?rev=573e5e0030c402f5418e7bfcd4ad7b06081e762f#573e5e0030c402f5418e7bfcd4ad7b06081e762f"
 dependencies = [
  "async-trait",
  "rusqlite",

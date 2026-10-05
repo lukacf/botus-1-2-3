@@ -36,6 +36,16 @@ retry receipts. Botus does not select a path or open a database. Unsupported
 or non-durable storage refuses activation. The native document limit is
 capped at the host's 8 MiB limit.
 
+Native identity and lineage survive host restart only when the host also
+persists its native mob journal. The convenience `.persistent_state(...)`
+path alone leaves that journal in memory. Build `MobBootstrapSpec::persistent(...)`
+with storage from `mob_composition_manifest::persistent_mob_storage(...)`,
+pass its paired provenance to `.with_mob_storage_provenance(...)`, and supply
+the spec with `.mob_spec(...)`. Durable workbooks and continuity records
+cannot reconstruct missing native creation facts; unavailable authority still
+refuses access. The host owns this storage configuration, and Botus continues
+using the host's document service.
+
 Both definitions carry `RustBundle` provenance with source ID `botus-1-2-3`,
 so native `InheritParent` delegation can carry the registered bundle's
 visibility proof. Runtime visibility and authority gates remain in force.
