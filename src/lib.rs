@@ -3,3 +3,16 @@
 //! The engine is framework-independent. Optional adapters use their host's
 //! durable document services and authenticated dispatch context.
 
+pub mod engine;
+mod formula;
+mod grid;
+mod value;
+
+#[cfg(feature = "mobkit")]
+pub mod native;
+
+pub use engine::{
+    ApplyResult, Cell, ChangedRange, EngineError, ErrorCode, ErrorValue, Filter, FilterOp, Formula,
+    Limits, NamedRange, Operation, ReadRequest, ReadResult, ReadView, Sheet, SheetDescription,
+    SortKey, Value, Workbook, WorkbookDescription,
+};

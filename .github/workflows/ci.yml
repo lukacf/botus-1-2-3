@@ -1,0 +1,41 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.0
+        with:
+          components: rustfmt, clippy
+      - run: make fmt
+      - run: make check
+      - run: make lint
+      - run: make test
+      - run: ./scripts/repo-cargo run --locked --example beige_budget
+      - name: Default engine has no runtime dependency
+        shell: bash
+        run: |
+          dependency_tree="$(./scripts/repo-cargo tree --locked --no-default-features --edges normal --prefix none)"
+          if printf '%s\n' "$dependency_tree" | grep -E '^(meerkat|mobkit-extension-state|tokio)(-| )'; then
+            echo "Default engine unexpectedly includes runtime dependencies"
+            exit 1
+          fi
+  native:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.0
+        with:
+          components: clippy
+      - run: make check-mobkit
+      - run: make lint-mobkit
+      - run: make test-mobkit
+      - run: ./scripts/repo-cargo run --locked --example native_host --features mobkit

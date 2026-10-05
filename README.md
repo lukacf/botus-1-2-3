@@ -9,6 +9,10 @@ for shell access. The package name is `botus-1-2-3`; Rust imports use
 Botus takes its cell addresses, ranges and affection for recalculation from
 Lotus 1-2-3. Its Unicode support has moved on from the floppy-disk era.
 See [SPEC.md](SPEC.md) for the implementation contract and acceptance tests.
+The [little green spreadsheet manual](USAGE.md) covers values, formulas,
+copying, sorting and bounded reads. No function-key overlay is required.
+The [unnecessary but period-appropriate addendum](FLIGHT-OF-THE-LOTUS.md)
+contains the jokes. The tool schema does not have to carry them to work.
 
 ## Three easy steps
 
@@ -44,6 +48,12 @@ in the design of this package.
 Use `make check`, `make test`, `make lint` and `make fmt`. Build caches stay
 outside the repository through `scripts/repo-cargo`.
 
-This repository begins with an implementation specification. Feature and
-validation claims must track the code and recorded test results.
+The sparse engine, formula evaluator, compact native adapter and tests are
+implemented here. Start with the runnable [beige budget](examples/beige_budget.rs)
+or the [native integration guide](NATIVE.md). The [engine review](REVIEW-engine.md)
+records its findings and fixes; [the manual](USAGE.md) describes supported
+operations and limits.
 
+The package is unpublished. Native storage and runtime acceptance are
+separate from the pure-engine test suite; the integration guide records
+that boundary. WK1, macros and protected exports remain deferred.

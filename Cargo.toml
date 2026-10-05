@@ -7,12 +7,24 @@ license = "MIT OR Apache-2.0"
 description = "A compact spreadsheet workspace for agents. Recalculate like it is 1989."
 repository = "https://github.com/lukacf/botus-1-2-3"
 
+[features]
+default = []
+mobkit = ["dep:async-trait", "dep:meerkat-core", "dep:meerkat-mobkit", "dep:tokio", "serde_json/raw_value"]
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+async-trait = { version = "0.1", optional = true }
+meerkat-core = { git = "https://github.com/lukacf/meerkat.git", rev = "d0f15ec36b74695fc3edbc4e75711f91d3535062", optional = true }
+meerkat-mobkit = { git = "https://github.com/lukacf/meerkat-mobkit", rev = "c4e60f1e936a934608de02e167226bbfa706b947", features = ["extension-state"], optional = true }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"], optional = true }
 
 [dev-dependencies]
 tempfile = "3"
+
+[[example]]
+name = "native_host"
+required-features = ["mobkit"]
 
 [lints.rust]
 unsafe_code = "forbid"
@@ -21,4 +33,3 @@ unsafe_code = "forbid"
 unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"
-
