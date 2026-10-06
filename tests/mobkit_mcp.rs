@@ -55,15 +55,16 @@ static CALL_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 static CALL_NAMESPACE: OnceLock<String> = OnceLock::new();
 
 fn run_host_test(body: fn() -> Pin<Box<dyn Future<Output = ()>>>) {
-    // Native debug futures need more stack than libtest provides. Only the
-    // function pointer crosses threads: the non-Send body is constructed and
-    // polled on this dedicated stack, with equally sized runtime workers.
+    // Fixture construction and the non-Send test driver need more stack than
+    // libtest provides. Only the function pointer crosses threads; the body
+    // is constructed and polled on this dedicated driver stack. Tokio workers
+    // retain the production 2 MiB stack budget.
     let thread = std::thread::Builder::new()
         .stack_size(32 * 1024 * 1024)
         .spawn(move || {
             let runtime = tokio::runtime::Builder::new_multi_thread()
                 .worker_threads(2)
-                .thread_stack_size(32 * 1024 * 1024)
+                .thread_stack_size(2 * 1024 * 1024)
                 .enable_all()
                 .build()
                 .unwrap();

@@ -28,9 +28,9 @@ Agents retrieve one complete chapter through the existing read tool, without
 shell access: `botus_read {"action":"help","topic":"read"}` or
 `botus_read {"action":"help","topic":"apply"}`. The other topics are
 `operations`, `formulas`, `access`, and `limits`. All chapters travel with the
-skill and are embedded in the executable from those same files. Help still
-requires an active host binding and authenticated caller; installing the
-skill alone does not provide tool access.
+skill and are embedded in the host-side tool implementation from those same
+files. Help still requires an active host binding and authenticated caller;
+installing the skill alone does not provide tool access.
 
 ## Package assets
 
