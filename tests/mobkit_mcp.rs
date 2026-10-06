@@ -36,6 +36,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
     collections::{BTreeMap, BTreeSet},
+    future::Future,
     hash::{DefaultHasher, Hash, Hasher},
     path::{Path, PathBuf},
     pin::Pin,
@@ -52,6 +53,24 @@ const CATALOG_TIMEOUT: Duration = Duration::from_secs(20);
 const CATALOG_BACKOFF: Duration = Duration::from_millis(250);
 static CALL_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 static CALL_NAMESPACE: OnceLock<String> = OnceLock::new();
+
+fn run_host_test(body: fn() -> Pin<Box<dyn Future<Output = ()> + Send>>) {
+    // Native debug futures need more stack than libtest provides. Keep both
+    // their construction and polling on explicitly sized runtime workers.
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .thread_stack_size(32 * 1024 * 1024)
+        .enable_all()
+        .build()
+        .unwrap();
+    let task = runtime.spawn(async move { body().await });
+    if let Err(error) = runtime.block_on(task) {
+        if error.is_panic() {
+            std::panic::resume_unwind(error.into_panic());
+        }
+        panic!("host test task was cancelled: {error}");
+    }
+}
 
 fn test_nonce() -> String {
     let mut bytes = [0_u8; 16];
@@ -664,8 +683,12 @@ fn private() -> DocumentAccess {
     }
 }
 
-#[tokio::test(flavor = "multi_thread")]
-async fn native_mcp_identity_fork_off_child_acl_and_read_only() {
+#[test]
+fn native_mcp_identity_fork_off_child_acl_and_read_only() {
+    run_host_test(|| Box::pin(identity_fork_off_child_acl_and_read_only_body()));
+}
+
+async fn identity_fork_off_child_acl_and_read_only_body() {
     let dir = tempfile::tempdir().unwrap();
     let host = Host::start(
         dir.path(),
@@ -862,8 +885,12 @@ async fn native_mcp_identity_fork_off_child_acl_and_read_only() {
     host.stop().await;
 }
 
-#[tokio::test(flavor = "multi_thread")]
-async fn native_mcp_child_supply_and_copied_host_only_descriptor() {
+#[test]
+fn native_mcp_child_supply_and_copied_host_only_descriptor() {
+    run_host_test(|| Box::pin(child_supply_and_copied_host_only_descriptor_body()));
+}
+
+async fn child_supply_and_copied_host_only_descriptor_body() {
     for availability in [
         ChildMcpAvailability::HostOnly,
         ChildMcpAvailability::ChildAvailable,
@@ -1054,8 +1081,14 @@ struct RestartCompletion {
     credential_fingerprint: Option<u64>,
 }
 
-#[tokio::test(flavor = "multi_thread")]
-async fn native_mcp_restart_rebinds_transport_preserves_acl_and_refuses_withdrawal() {
+#[test]
+fn native_mcp_restart_rebinds_transport_preserves_acl_and_refuses_withdrawal() {
+    run_host_test(|| {
+        Box::pin(restart_rebinds_transport_preserves_acl_and_refuses_withdrawal_body())
+    });
+}
+
+async fn restart_rebinds_transport_preserves_acl_and_refuses_withdrawal_body() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::create_dir(dir.path().join("state")).unwrap();
     let run = test_nonce();
@@ -1388,9 +1421,13 @@ async fn restart_withdrawn(path: &Path, public: &McpServerConfig) {
     );
 }
 
-#[tokio::test(flavor = "multi_thread")]
+#[test]
 #[ignore = "launched in exact isolated phases by the fresh-process acceptance test"]
-async fn native_mcp_restart_process_fixture() {
+fn native_mcp_restart_process_fixture() {
+    run_host_test(|| Box::pin(restart_process_fixture_body()));
+}
+
+async fn restart_process_fixture_body() {
     let path = PathBuf::from(std::env::var_os("BOTUS_RESTART_PATH").expect("helper path"));
     let phase = std::env::var("BOTUS_RESTART_PHASE").expect("helper phase");
     let run = std::env::var("BOTUS_RESTART_RUN").expect("helper run challenge");
