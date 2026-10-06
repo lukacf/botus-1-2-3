@@ -65,7 +65,7 @@ text filtering.
 
 Function names are case-insensitive. Every supported function accepts an
 optional `@` prefix: `@SUM`, `@AVERAGE`, `@MIN`, `@MAX`, `@COUNT`, and `@IF`.
-The alias uses the same semantics, not a separate Lotus evaluator.
+Both spellings use the same parser and evaluation rules.
 Arguments are comma-separated; semicolons are unsupported.
 
 | Function | Arguments | Result / empty numeric input |

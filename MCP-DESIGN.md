@@ -1,4 +1,4 @@
-# MCP without a second filing cabinet
+# MCP integration contract
 
 Status: implementation contract. The [MCP guide](MCP.md) records host setup
 and the separate runtime qualification requirement.
@@ -103,5 +103,3 @@ arguments so the document service can return the original receipt.
 - Include `plugin.json`, `mcp.json`, `SKILL.md` and every referenced manual
   page in the distribution. Verify the manual against actual request and
   response types.
-
-F9 may be nostalgic. Authority is current.

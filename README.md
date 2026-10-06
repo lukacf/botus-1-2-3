@@ -2,19 +2,17 @@
 
 ![Botus 1-2-3: a beige computer, boxed software and floppy disks, with the slogan Recalculate like it is 1989.](assets/botus-1-2-3.png)
 
-**Recalculate like it is 1989. Save like the process might restart.**
+**Recalculate like it is 1989.**
 
 A spreadsheet workspace for agents that have better things to do than ask
 for shell access. The package name is `botus-1-2-3`; Rust imports use
 `botus_1_2_3`.
 
-Botus takes its cell addresses, ranges and affection for recalculation from
-Lotus 1-2-3. Its Unicode support has moved on from the floppy-disk era.
+Botus takes its cell addresses and ranges from Lotus 1-2-3, with Unicode
+text and automatic recalculation.
 See [SPEC.md](SPEC.md) for the implementation contract and acceptance tests.
 The [little green spreadsheet manual](USAGE.md) covers values, formulas,
-copying, sorting and bounded reads. No function-key overlay is required.
-The [unnecessary but period-appropriate addendum](FLIGHT-OF-THE-LOTUS.md)
-contains the jokes. The tool schema does not have to carry them to work.
+copying, sorting and bounded reads.
 
 The companion [agent skill](skills/botus-1-2-3/SKILL.md) contains the complete
 functional reference, with separate chapters for
@@ -58,12 +56,10 @@ asset installation.
 
 1. Put structured data in a workbook.
 2. Calculate, filter and share it with authorized agents.
-3. Persist through MobKit. Please do not remove the virtual disk while the
-   imaginary light is on.
+3. Persist through MobKit.
 
 Two agent tools, `botus_read` and `botus_apply`, serve the whole workspace.
-Bulk operations and bounded responses keep the context bill out of the
-spreadsheet's expense column.
+Bulk operations and bounded responses keep tool calls and context use small.
 
 ## A cell of one's own
 
@@ -73,16 +69,13 @@ ownership.
 Owners can explicitly share with children, other agents or a mob. Realm
 ownership does not imply that every agent can read the document.
 
-MobKit supplies persistence and enforces access. Botus does not hide an
-extra SQLite file behind the filing cabinet. The engine itself remains
-independent of the agent runtime.
+MobKit supplies persistence and enforces access through its document store.
+The engine itself remains independent of the agent runtime.
 
-## Compatibility department
+## Compatibility
 
-The specification is inspired by Release 2.2, not chained to its file
-format. WK1 is an optional future novelty. No binary compatibility is
-claimed. No lotus flowers, spreadsheets or 5.25-inch floppies were harmed
-in the design of this package.
+The interaction model is inspired by Lotus 1-2-3 Release 2.2. Workbooks use
+versioned JSON. WK1 and Lotus binary compatibility are not supported.
 
 Native bundle or MCP document-binding activation opts the host's local
 continuity store into schema v3 identity history. Earlier binaries which support only v1/v2 then refuse

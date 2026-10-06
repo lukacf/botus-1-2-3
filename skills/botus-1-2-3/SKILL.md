@@ -61,5 +61,3 @@ Ordinary children need explicit or descendant sharing. Obtain a child's exact
 `caller_principal` from its own `identity` read when selecting a grant
 recipient. That principal is not authentication. Never send invented actor,
 session, realm, ancestry, or administrator claims in tool arguments.
-
-Recalculate like it is 1989. Keep the receipt like the process might restart.

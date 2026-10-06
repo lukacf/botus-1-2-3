@@ -66,7 +66,7 @@ Forks within the host mob remain eligible, subject to current workbook access.
 Configure the host's persistent state and extension document store as usual.
 Activating an MCP document binding enrolls the local continuity store in
 schema v3 identity history. Older v1/v2-only binaries then refuse that store;
-review the [compatibility boundary](README.md#compatibility-department)
+review the [compatibility boundary](README.md#compatibility)
 before activation. For the builder-owned definition path, retain the complete
 mob store too:
 
@@ -143,5 +143,3 @@ access nor a separate skill-resource tool. The response bound applies to the
 complete chapter and envelope; an oversized result returns `limit`, without
 truncation or pagination. A missing host binding cannot be repaired by loading
 the skill alone.
-
-F9 remembers the formulas. MobKit remembers who may read them.

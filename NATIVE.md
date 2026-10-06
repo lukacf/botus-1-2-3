@@ -1,4 +1,4 @@
-# The filing cabinet belongs to the host
+# Native host integration
 
 The optional `mobkit` feature supplies exactly two tools: `botus_read` and
 `botus_apply`. The default crate uses only Serde and Serde JSON. This package
@@ -64,7 +64,7 @@ history. Registering this bundle with that store returns
 storage or tool factory activation. A host needs a continuity provider that
 supplies the required authority history.
 
-## Two keys, no function-key overlay
+## Create, read and edit
 
 Create with a unique request ID. Ordinary strings are always text; formula
 objects are explicit.
@@ -109,7 +109,7 @@ replay returns the exact durable receipt with `replayed:true`, omitting
 calculated cells and change statistics. Read again for current cells. A
 changed request under the same ID fails. A concurrent duplicate which loses
 the commit race also returns receipt-only. Only the actual commit returns
-newly calculated cells, so the virtual F9 key cannot print a phantom result.
+newly calculated cells.
 
 ## Share with a child's reported principal
 

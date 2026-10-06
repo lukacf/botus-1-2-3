@@ -11,9 +11,9 @@ workspace. Package and repository name: `botus-1-2-3`. Rust crate identifier:
 integration through optional dependencies. An application which omits the
 package gets no tool definitions, prompts or spreadsheet dependency.
 
-Lotus 1-2-3 Release 2.2 inspires the interaction model, not a binary
-compatibility promise. WK1 is not required. Humor belongs in docs, examples
-and opt-in display, with no added turns, randomized output or noisy errors.
+Lotus 1-2-3 Release 2.2 inspires the interaction model. Workbooks use
+versioned JSON; WK1 and Lotus binary compatibility are not provided.
+Tool responses stay concise and bounded.
 
 ## Workbook model
 
@@ -190,5 +190,3 @@ continues to own persistence and authority.
 - Review: adversarial findings are fixed or explicitly recorded as release
   blockers. Local validation, PR CI, merge and package publication are
   separate evidence states.
-
-The release slogan is optional. The durable commit is not.
