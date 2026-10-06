@@ -114,6 +114,13 @@ composition and its runtime identities. Fixture tests alone do not establish
 parent, child or fork integration. Consult the pull request's exact-head
 validation record for completed qualification.
 
+`make test-installed-mcp` installs a debug relay into a fresh temporary root,
+checks the installed manifests and full skill byte for byte, then runs the
+complete host suite against that installed executable. CI uses this gate.
+The temporary installation is removed when the command exits. This verifies
+source installation and real MCP behavior; it does not publish a package or
+qualify a release-profile binary.
+
 After an uncertain write result, use the same Botus request ID and unchanged
 arguments. The runtime issues a new transport correlation. MobKit's durable
 receipt resolves whether the original write committed. Cancellation cannot

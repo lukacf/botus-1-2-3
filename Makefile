@@ -1,6 +1,6 @@
 CARGO := ./scripts/repo-cargo
 
-.PHONY: check test lint fmt check-mobkit test-mobkit lint-mobkit check-mcp test-mcp lint-mcp test-mcp-host
+.PHONY: check test lint fmt check-mobkit test-mobkit lint-mobkit check-mcp test-mcp lint-mcp test-mcp-host test-installed-mcp
 check:
 	$(CARGO) check --locked --all-targets
 test:
@@ -25,3 +25,7 @@ lint-mcp:
 # Explicit full host integration lane; the default engine lane stays small.
 test-mcp-host:
 	$(CARGO) test --locked --all-targets --features mcp-host-tests
+
+# Install into a fresh temporary root and exercise the installed relay.
+test-installed-mcp:
+	./scripts/test-installed-mcp

@@ -5,6 +5,8 @@
 
 #[path = "support/help_chapters.rs"]
 mod help_chapters;
+#[path = "support/relay_binary.rs"]
+mod relay_binary;
 
 use async_trait::async_trait;
 use botus_1_2_3::{
@@ -90,7 +92,7 @@ impl Fixture {
     async fn with_limits(path: &Path, limits: botus_1_2_3::Limits) -> TestResult<Self> {
         let host = Arc::new(BotusMcpHost::new(limits));
         let listener = host.start().await?;
-        let config = listener.relay_config(env!("CARGO_BIN_EXE_botus-1-2-3"));
+        let config = listener.relay_config(relay_binary::relay_binary()?);
         let provider = listener.call_context_provider(config.clone())?;
         let session = SessionId::new();
         let authority = Arc::new(Authority {
@@ -367,7 +369,7 @@ async fn cancellation_and_dropped_native_lease_reach_the_host() -> TestResult {
 
 #[test]
 fn launcher_refuses_missing_host_settings_before_protocol_start() -> TestResult {
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_botus-1-2-3"))
+    let output = std::process::Command::new(relay_binary::relay_binary()?)
         .arg("mcp")
         .env_remove("BOTUS_MCP_ENDPOINT")
         .env_remove("BOTUS_MCP_RELAY_TOKEN")

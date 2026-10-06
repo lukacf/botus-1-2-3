@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+botus_repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$botus_repo_root"
+botus_install_root="$(mktemp -d "${TMPDIR:-/tmp}/botus-installed-mcp.XXXXXX")"
+trap 'rm -rf -- "$botus_install_root"' EXIT
+
+# Debug installation reuses the host acceptance build; this gate does not
+# claim release-profile qualification or registry publication.
+./scripts/repo-cargo install --locked --path . --debug \
+    --features mcp-host-tests --bin botus-1-2-3 --root "$botus_install_root"
+export BOTUS_MCP_TEST_BINARY="$botus_install_root/bin/botus-1-2-3"
+test -x "$BOTUS_MCP_TEST_BINARY"
+shasum -a 256 "$BOTUS_MCP_TEST_BINARY"
+
+python3 scripts/install-plugin-assets "$botus_install_root/plugin"
+python3 - "$botus_repo_root" "$botus_install_root/plugin" <<'PY'
+from pathlib import Path
+import sys
+
+source, installed = map(Path, sys.argv[1:])
+expected = {Path("plugin.json"), Path("mcp.json")}
+expected.update(p.relative_to(source) for p in (source / "skills").rglob("*") if p.is_file())
+actual = {p.relative_to(installed) for p in installed.rglob("*") if p.is_file()}
+if actual != expected:
+    raise SystemExit("Installed plugin inventory differs from the package assets")
+for path in sorted(expected):
+    if (source / path).read_bytes() != (installed / path).read_bytes():
+        raise SystemExit(f"Installed plugin asset differs: {path}")
+print(f"Verified {len(expected)} byte-identical installed plugin assets")
+PY
+
+./scripts/repo-cargo test --locked --all-targets --features mcp-host-tests --no-fail-fast

@@ -4,6 +4,9 @@
 //! MCP -> MobKit's current identity and durable document authority. No fixture
 //! caller resolver, caller token, or direct document mutation is used here.
 
+#[path = "support/relay_binary.rs"]
+mod relay_binary;
+
 use async_trait::async_trait;
 use botus_1_2_3::{
     mcp::{BotusMcpContextProvider, BotusMcpHost, BotusMcpListener, ENDPOINT_ENV, RELAY_TOKEN_ENV},
@@ -474,7 +477,7 @@ impl Host {
     async fn start(path: &Path, mob_id: &str, availability: ChildMcpAvailability) -> Self {
         let host = Arc::new(BotusMcpHost::default());
         let listener = host.start().await.unwrap();
-        let runtime_config = listener.relay_config(env!("CARGO_BIN_EXE_botus-1-2-3"));
+        let runtime_config = listener.relay_config(relay_binary::relay_binary().unwrap());
         let provider = Arc::new(ObservedProvider {
             inner: listener
                 .call_context_provider(runtime_config.clone())
