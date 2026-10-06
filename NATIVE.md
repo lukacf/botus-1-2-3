@@ -1,4 +1,4 @@
-# Native host integration
+# The filing cabinet belongs to the host
 
 The optional `mobkit` feature supplies exactly two tools: `botus_read` and
 `botus_apply`. The default crate uses only Serde and Serde JSON. This package
@@ -185,7 +185,8 @@ it is infrastructure feedback rather than an access-denied decision. The
 adapter does not turn unavailable identity into an anonymous caller.
 
 Owners administer workbooks. Reader and Editor grants do not confer sharing,
-transfer or deletion rights. A requested owner is only a recipient for the
+transfer or deletion rights. Naming a sheet `Management` does not change
+these permissions. A requested owner is only a recipient for the
 host to authorize. Fork and descendant access always depends on the host's
 verified creation history and current policy. Missing or unsupported
 provenance fails closed; this guide makes no claim for remote placements or

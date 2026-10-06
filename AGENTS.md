@@ -3,9 +3,11 @@
 SPEC.md owns the product contract. Changes must preserve its ownership,
 lineage, persistence, context and bounded-execution guarantees.
 
-Use ASCII hyphens only in authored text. Keep documentation matter-of-fact.
-Let references stand without commentary or a separate explanatory document.
-Errors and protocol data remain precise.
+Use ASCII hyphens only in authored text. Use deadpan, matter-of-fact humor
+in user-facing documentation, presented as ordinary documentation. Do not
+label or explain it or collect it in a separate document. Keep SKILL.md
+factual except for its user-facing commentary rule. Errors and protocol data
+remain precise.
 
 Use Make or ./scripts/repo-cargo for Rust work. Coordinate Cargo.lock and
 builds; never run simultaneous Cargo commands against the same target.

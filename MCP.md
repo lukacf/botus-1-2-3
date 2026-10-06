@@ -19,6 +19,8 @@ Build and install the executable from this repository:
 python3 scripts/install-plugin-assets /your/plugin-directory/botus-1-2-3
 ```
 
+No changes to `AUTOEXEC.BAT` are required.
+
 The installer copies the manifests and the complete skill into a new
 directory. It refuses to overwrite one. Installation does not activate a
 workbook service or grant an agent access. The host must perform the

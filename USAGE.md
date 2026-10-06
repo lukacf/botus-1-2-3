@@ -31,8 +31,9 @@ conversion of a numeric-looking string. Keep dates as ISO text for now.
 
 ## Recalculation
 
-Recalculation is automatic. Arithmetic, comparisons, references, named
-ranges, `SUM`, `AVERAGE`, `MIN`, `MAX`, `COUNT` and lazy `IF` are supported.
+Recalculation is automatic. F9 is not required. Arithmetic, comparisons,
+references, named ranges, `SUM`, `AVERAGE`, `MIN`, `MAX`, `COUNT` and lazy `IF`
+are supported.
 The optional `@SUM(...)` spelling uses the same implementation as `SUM(...)`.
 
 Aggregates count or use numbers only, ignoring text, booleans and blanks.
