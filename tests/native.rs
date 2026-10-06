@@ -573,6 +573,191 @@ async fn native_edit_is_atomic_and_retry_precedes_stale_revision_check() -> Test
 }
 
 #[tokio::test]
+async fn ownership_transfer_requires_management_and_preserves_acl_for_new_owner() -> TestResult {
+    // The host attests one destination. This does not grant any caller the
+    // authority to manage the current owner; the real store must still check it.
+    struct TransferAuthority {
+        callers: Arc<TestAuthority>,
+        destination: Owner,
+    }
+    #[async_trait]
+    impl ToolCallerResolver for TransferAuthority {
+        async fn resolve(
+            &self,
+            context: &ToolDispatchContext,
+            requested_owner: Option<&Owner>,
+        ) -> meerkat_mobkit::extension_state::documents::Result<HostAccessContext> {
+            if requested_owner.is_some_and(|owner| owner != &self.destination) {
+                return Err(Error::NotFound);
+            }
+            Ok(self
+                .callers
+                .resolve(context, None)
+                .await?
+                .with_valid_owners([self.destination.clone()].into()))
+        }
+    }
+
+    let temporary = tempfile::tempdir()?;
+    let owner = actor("transfer-owner")?;
+    let editor = actor("transfer-editor")?;
+    let recipient = actor("transfer-recipient")?;
+    let restricted_owner = (
+        ToolDispatchContext::default().with_runtime_identity(SessionId::new(), None),
+        HostAccessContext::new(
+            "beige-realm",
+            owner.1.principal().clone(),
+            VerifiedLineage::root(),
+            HostPolicy {
+                read: true,
+                edit: true,
+                manage: false,
+            },
+        )?,
+    );
+    let destination = Owner::Agent(recipient.1.principal().clone());
+    let documents = DocumentService::new(
+        "beige-realm",
+        NAMESPACE,
+        Arc::new(SqliteExtensionDocumentStore::open(
+            temporary.path().join("host.sqlite3"),
+        )?),
+    )?;
+    let tools = BotusToolFactory::default()
+        .build(ToolBundleContext {
+            documents,
+            caller_resolver: Arc::new(TransferAuthority {
+                callers: authority(&[
+                    owner.clone(),
+                    restricted_owner.clone(),
+                    editor.clone(),
+                    recipient.clone(),
+                ])?,
+                destination: destination.clone(),
+            }),
+        })
+        .map_err(std::io::Error::other)?;
+    let access = DocumentAccess {
+        owner_reach: Reach::SelfOnly,
+        grants: vec![Grant {
+            audience: Audience::Agent {
+                principal: editor.1.principal().clone(),
+                reach: Reach::SelfOnly,
+            },
+            role: Role::Editor,
+        }],
+        ..Default::default()
+    };
+    let (error, created) = send(
+        &tools,
+        &owner.0,
+        "botus_apply",
+        json!({"action":"create","request_id":"transfer-create","title":"Hand over the floppy",
+            "access":access,"operations":[{"op":"put","at":"A1","values":[[1]]}]}),
+    )
+    .await?;
+    assert!(!error, "{created}");
+    let id = created["receipt"]["document_id"].clone();
+    let (error, edited) = send(
+        &tools,
+        &editor.0,
+        "botus_apply",
+        json!({"action":"edit","request_id":"editor-control","id":id,
+            "revision":created["receipt"]["revision"],
+            "operations":[{"op":"put","at":"A1","values":[[2]]}]}),
+    )
+    .await?;
+    assert!(!error, "{edited}");
+    let revision = edited["receipt"]["revision"].clone();
+    let transfer = json!({"action":"transfer","request_id":"handoff","id":id,
+        "revision":revision,"owner":destination});
+
+    // A data editor and even the owner under a no-management host policy
+    // cannot transfer. A valid destination alone grants neither permission.
+    for caller in [&editor, &restricted_owner] {
+        let (error, refused) = send(&tools, &caller.0, "botus_apply", transfer.clone()).await?;
+        assert!(error, "{refused}");
+        assert_eq!(refused["error"]["code"], "unavailable");
+    }
+    let mut stale = transfer.clone();
+    stale["request_id"] = json!("stale-handoff");
+    stale["revision"] = created["receipt"]["revision"].clone();
+    let (error, refused) = send(&tools, &owner.0, "botus_apply", stale).await?;
+    assert!(error, "{refused}");
+    assert_eq!(refused["error"]["code"], "conflict");
+    let describe = json!({"action":"describe","id":id});
+    let (error, unchanged) = send(&tools, &owner.0, "botus_read", describe.clone()).await?;
+    assert!(!error, "{unchanged}");
+    assert_eq!(
+        unchanged["owner"],
+        json!(Owner::Agent(owner.1.principal().clone()))
+    );
+    assert_eq!(unchanged["revision"], revision);
+    assert_eq!(unchanged["access"], json!(access));
+
+    // Omitting access preserves the complete ACL while changing ownership.
+    let (error, transferred) = send(&tools, &owner.0, "botus_apply", transfer.clone()).await?;
+    assert!(!error, "{transferred}");
+    assert_eq!(transferred["receipt"]["document_id"], id);
+    assert_ne!(transferred["receipt"]["revision"], revision);
+    assert_eq!(transferred["receipt"]["deleted"], false);
+    assert_eq!(transferred["replayed"], false);
+    assert!(transferred.get("changes").is_none());
+    assert!(transferred.get("selected").is_none());
+    let (error, current) = send(&tools, &recipient.0, "botus_read", describe.clone()).await?;
+    assert!(!error, "{current}");
+    assert_eq!(current["owner"], json!(destination));
+    assert_eq!(current["revision"], transferred["receipt"]["revision"]);
+    assert_eq!(current["access"], json!(access));
+    for caller in [&recipient, &editor] {
+        let (error, read) = send(
+            &tools,
+            &caller.0,
+            "botus_read",
+            json!({"action":"read","id":id,"query":{"range":"A1"}}),
+        )
+        .await?;
+        assert!(!error, "{read}");
+        assert_eq!(read["selected"]["rows"], json!([[2.0]]));
+    }
+    // The former owner loses both data access and authority to replay its
+    // successful administrative receipt once the transfer has committed.
+    for (tool, request) in [("botus_read", describe.clone()), ("botus_apply", transfer)] {
+        let (error, refused) = send(&tools, &owner.0, tool, request).await?;
+        assert!(error, "{refused}");
+        assert_eq!(refused["error"]["code"], "unavailable");
+    }
+
+    // The recipient gains administrative authority, not just data access.
+    let private = DocumentAccess {
+        owner_reach: Reach::SelfOnly,
+        ..Default::default()
+    };
+    let (error, shared) = send(
+        &tools,
+        &recipient.0,
+        "botus_apply",
+        json!({"action":"share","request_id":"recipient-management-control","id":id,
+            "revision":transferred["receipt"]["revision"],"access":private}),
+    )
+    .await?;
+    assert!(!error, "{shared}");
+    assert_ne!(
+        shared["receipt"]["revision"],
+        transferred["receipt"]["revision"]
+    );
+    let (error, current) = send(&tools, &recipient.0, "botus_read", describe.clone()).await?;
+    assert!(!error, "{current}");
+    assert_eq!(current["owner"], json!(destination));
+    assert_eq!(current["revision"], shared["receipt"]["revision"]);
+    assert_eq!(current["access"], json!(private));
+    let (error, refused) = send(&tools, &editor.0, "botus_read", describe).await?;
+    assert!(error, "{refused}");
+    assert_eq!(refused["error"]["code"], "unavailable");
+    Ok(())
+}
+
+#[tokio::test]
 async fn restart_recovers_workbook_access_and_exact_retry_receipt() -> TestResult {
     let temporary = tempfile::tempdir()?;
     let path = temporary.path().join("host.sqlite3");
