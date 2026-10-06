@@ -1829,7 +1829,7 @@ checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 [[package]]
 name = "meerkat"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1874,7 +1874,7 @@ dependencies = [
 [[package]]
 name = "meerkat-anthropic"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -1898,7 +1898,7 @@ dependencies = [
 [[package]]
 name = "meerkat-auth-core"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "axum",
@@ -1928,22 +1928,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "meerkat-authorization-contracts"
-version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
-dependencies = [
- "meerkat-core",
- "serde",
- "serde_json",
- "sha2",
- "thiserror 2.0.21",
- "uuid",
-]
-
-[[package]]
 name = "meerkat-capabilities"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "inventory",
  "meerkat-core",
@@ -1955,7 +1942,7 @@ dependencies = [
 [[package]]
 name = "meerkat-client"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "meerkat-anthropic",
  "meerkat-core",
@@ -1967,7 +1954,7 @@ dependencies = [
 [[package]]
 name = "meerkat-comms"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -2002,7 +1989,7 @@ dependencies = [
 [[package]]
 name = "meerkat-contracts"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -2023,7 +2010,7 @@ dependencies = [
 [[package]]
 name = "meerkat-copilot"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -2045,7 +2032,7 @@ dependencies = [
 [[package]]
 name = "meerkat-core"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -2078,7 +2065,7 @@ dependencies = [
 [[package]]
 name = "meerkat-gemini"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -2103,7 +2090,7 @@ dependencies = [
 [[package]]
 name = "meerkat-hooks"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2125,7 +2112,7 @@ dependencies = [
 [[package]]
 name = "meerkat-jobs"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2144,7 +2131,7 @@ dependencies = [
 [[package]]
 name = "meerkat-live"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "axum",
@@ -2163,7 +2150,7 @@ dependencies = [
 [[package]]
 name = "meerkat-llm-core"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -2188,7 +2175,7 @@ dependencies = [
 [[package]]
 name = "meerkat-machine-derive"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "quote",
  "syn 2.0.119",
@@ -2197,7 +2184,7 @@ dependencies = [
 [[package]]
 name = "meerkat-machine-dsl"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "meerkat-machine-dsl-core",
 ]
@@ -2205,7 +2192,7 @@ dependencies = [
 [[package]]
 name = "meerkat-machine-dsl-core"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2215,10 +2202,9 @@ dependencies = [
 [[package]]
 name = "meerkat-machine-kernels"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "indexmap",
- "meerkat-authorization-contracts",
  "meerkat-core",
  "meerkat-machine-schema",
  "serde",
@@ -2228,10 +2214,9 @@ dependencies = [
 [[package]]
 name = "meerkat-machine-schema"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "indexmap",
- "meerkat-authorization-contracts",
  "meerkat-core",
  "meerkat-machine-dsl",
  "serde",
@@ -2242,7 +2227,7 @@ dependencies = [
 [[package]]
 name = "meerkat-mcp"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "futures",
@@ -2268,7 +2253,7 @@ dependencies = [
 [[package]]
 name = "meerkat-memory"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "hnsw_rs",
@@ -2290,7 +2275,7 @@ dependencies = [
 [[package]]
 name = "meerkat-mob"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2329,7 +2314,7 @@ dependencies = [
 [[package]]
 name = "meerkat-mob-mcp"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2358,7 +2343,7 @@ dependencies = [
 [[package]]
 name = "meerkat-mobkit"
 version = "0.8.47"
-source = "git+https://github.com/lukacf/meerkat-mobkit?rev=85148037def8f0819b516b450af2194ef5cba7e5#85148037def8f0819b516b450af2194ef5cba7e5"
+source = "git+https://github.com/lukacf/meerkat-mobkit?rev=6e0f7338d228da0359e85c7a89853d5b6f0c59bc#6e0f7338d228da0359e85c7a89853d5b6f0c59bc"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -2414,7 +2399,7 @@ dependencies = [
 [[package]]
 name = "meerkat-models"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "meerkat-core",
 ]
@@ -2422,7 +2407,7 @@ dependencies = [
 [[package]]
 name = "meerkat-openai"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -2452,7 +2437,7 @@ dependencies = [
 [[package]]
 name = "meerkat-providers"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "meerkat-auth-core",
  "meerkat-llm-core",
@@ -2461,14 +2446,13 @@ dependencies = [
 [[package]]
 name = "meerkat-runtime"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "chrono",
  "futures",
  "indexmap",
  "meerkat-auth-core",
- "meerkat-authorization-contracts",
  "meerkat-contracts",
  "meerkat-core",
  "meerkat-live",
@@ -2488,23 +2472,12 @@ dependencies = [
  "tokio_with_wasm",
  "tracing",
  "uuid",
- "winapi-util",
-]
-
-[[package]]
-name = "meerkat-sandbox"
-version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
-dependencies = [
- "meerkat-core",
- "nix 0.29.0",
- "tokio",
 ]
 
 [[package]]
 name = "meerkat-schedule"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2529,7 +2502,7 @@ dependencies = [
 [[package]]
 name = "meerkat-session"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "futures",
@@ -2554,7 +2527,7 @@ dependencies = [
 [[package]]
 name = "meerkat-skills"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "indexmap",
@@ -2576,7 +2549,7 @@ dependencies = [
 [[package]]
 name = "meerkat-sqlite"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "rusqlite",
  "thiserror 2.0.21",
@@ -2585,7 +2558,7 @@ dependencies = [
 [[package]]
 name = "meerkat-store"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2609,7 +2582,7 @@ dependencies = [
 [[package]]
 name = "meerkat-tools"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -2627,7 +2600,6 @@ dependencies = [
  "meerkat-llm-core",
  "meerkat-mcp",
  "meerkat-runtime",
- "meerkat-sandbox",
  "meerkat-skills",
  "meerkat-sqlite",
  "meerkat-store",
@@ -2650,7 +2622,7 @@ dependencies = [
 [[package]]
 name = "meerkat-workgraph"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2738,7 +2710,7 @@ dependencies = [
 [[package]]
 name = "mobkit-extension-state"
 version = "0.8.47"
-source = "git+https://github.com/lukacf/meerkat-mobkit?rev=85148037def8f0819b516b450af2194ef5cba7e5#85148037def8f0819b516b450af2194ef5cba7e5"
+source = "git+https://github.com/lukacf/meerkat-mobkit?rev=6e0f7338d228da0359e85c7a89853d5b6f0c59bc#6e0f7338d228da0359e85c7a89853d5b6f0c59bc"
 dependencies = [
  "async-trait",
  "rusqlite",
@@ -5597,4 +5569,4 @@ checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 [[patch.unused]]
 name = "meerkat-store-conformance"
 version = "0.8.51"
-source = "git+https://github.com/lukacf/meerkat.git?rev=f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe#f58cf30dbf8f6eb17a054b24b524085eb6f2e7fe"
+source = "git+https://github.com/lukacf/meerkat.git?rev=e736c3b9be29244ec72c19dd5170cff3b3385f2b#e736c3b9be29244ec72c19dd5170cff3b3385f2b"
