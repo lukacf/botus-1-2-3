@@ -54,21 +54,24 @@ const CATALOG_BACKOFF: Duration = Duration::from_millis(250);
 static CALL_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 static CALL_NAMESPACE: OnceLock<String> = OnceLock::new();
 
-fn run_host_test(body: fn() -> Pin<Box<dyn Future<Output = ()> + Send>>) {
-    // Native debug futures need more stack than libtest provides. Keep both
-    // their construction and polling on explicitly sized runtime workers.
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(2)
-        .thread_stack_size(32 * 1024 * 1024)
-        .enable_all()
-        .build()
+fn run_host_test(body: fn() -> Pin<Box<dyn Future<Output = ()>>>) {
+    // Native debug futures need more stack than libtest provides. Only the
+    // function pointer crosses threads: the non-Send body is constructed and
+    // polled on this dedicated stack, with equally sized runtime workers.
+    let thread = std::thread::Builder::new()
+        .stack_size(32 * 1024 * 1024)
+        .spawn(move || {
+            let runtime = tokio::runtime::Builder::new_multi_thread()
+                .worker_threads(2)
+                .thread_stack_size(32 * 1024 * 1024)
+                .enable_all()
+                .build()
+                .unwrap();
+            runtime.block_on(body());
+        })
         .unwrap();
-    let task = runtime.spawn(async move { body().await });
-    if let Err(error) = runtime.block_on(task) {
-        if error.is_panic() {
-            std::panic::resume_unwind(error.into_panic());
-        }
-        panic!("host test task was cancelled: {error}");
+    if let Err(panic) = thread.join() {
+        std::panic::resume_unwind(panic);
     }
 }
 
