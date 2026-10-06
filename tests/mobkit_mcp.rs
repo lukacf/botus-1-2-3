@@ -17,7 +17,7 @@ use meerkat_client::{LlmClient, LlmDoneOutcome, LlmError, LlmEvent, LlmRequest};
 use meerkat_core::{
     McpServerConfig, Message, SessionId, ToolDispatchContext, ToolSourceKind,
     mcp_config::McpTransportConfig,
-    types::{ContentInput, HandlingMode, StopReason, ToolCallView, ToolResult},
+    types::{ContentInput, HandlingMode, StopReason, SystemNoticeKind, ToolCallView, ToolResult},
 };
 use meerkat_mcp::{McpCallContext, McpCallContextError, McpCallContextProvider, McpCallTarget};
 use meerkat_mob::{
@@ -175,20 +175,17 @@ impl ScriptClient {
                 if has_search {
                     search = true;
                 } else {
-                    // Without any deferred/dynamic source the native factory
-                    // does not compose catalog controls. The HostOnly test also
-                    // verifies the real implicit child's public profile below.
-                    assert!(
-                        !plan.expects_botus,
-                        "MCP source has no catalog control plane"
-                    );
+                    // Compositions containing a nonexact dispatcher keep MCP
+                    // tools inline. The shared Ready checks below must observe
+                    // the real pair and provenance before emitting the call.
                     assert!(
                         !request
                             .tools
                             .iter()
                             .any(|tool| tool.name == "tool_catalog_load")
                     );
-                    plan.absent_proven = true;
+                    // HostOnly also checks the actual implicit child's profile.
+                    plan.absent_proven = !plan.expects_botus;
                     plan.catalog_step = CatalogStep::Ready;
                 }
             }
@@ -302,7 +299,21 @@ impl ScriptClient {
             .collect::<Vec<_>>();
         botus.sort_by(|a, b| a.name.cmp(&b.name));
         if plan.expects_botus {
-            assert_eq!(botus.len(), 2, "Botus must expose exactly two loaded tools");
+            assert_eq!(
+                botus.len(),
+                2,
+                "Botus is missing or pending: expected exactly two visible MCP tools \
+                 (catalog controls: {has_search}); visible tools: {:?}; MCP pending notice: {}",
+                request
+                    .tools
+                    .iter()
+                    .map(|tool| tool.name.as_str())
+                    .collect::<Vec<_>>(),
+                request.messages.iter().any(|message| matches!(
+                    message,
+                    Message::SystemNotice(notice) if notice.kind == SystemNoticeKind::McpPending
+                )),
+            );
             assert_eq!(botus[0].name, "botus_apply");
             assert_eq!(botus[1].name, "botus_read");
             for tool in botus {
