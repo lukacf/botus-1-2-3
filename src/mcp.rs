@@ -386,10 +386,9 @@ async fn authenticate(auth: Arc<String>, mut request: Request, next: Next) -> Re
         if let Some(metadata) = message
             .pointer_mut("/params/_meta")
             .and_then(Value::as_object_mut)
+            && let Some(capability) = metadata.remove(CALL_META_KEY)
         {
-            if let Some(capability) = metadata.remove(CALL_META_KEY) {
-                parts.extensions.insert(ProtectedCapability(capability));
-            }
+            parts.extensions.insert(ProtectedCapability(capability));
         }
         let bytes = match serde_json::to_vec(&message) {
             Ok(bytes) => bytes,
@@ -441,9 +440,7 @@ fn mcp_tools() -> Result<ListToolsResult, ErrorData> {
             )
         })
         .collect::<Result<Vec<_>, ErrorData>>()?;
-    let mut result = ListToolsResult::default();
-    result.tools = tools;
-    Ok(result)
+    Ok(ListToolsResult::with_all_items(tools))
 }
 
 #[derive(Clone)]

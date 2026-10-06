@@ -41,12 +41,11 @@ impl ProtectedInputCodec {
             .and_then(|metadata| metadata.remove(CALL_META_KEY));
         let mut message: ClientJsonRpcMessage = serde_json::from_value(value)
             .map_err(|_| io::Error::other("Invalid MCP JSON-RPC frame"))?;
-        if let ClientJsonRpcMessage::Request(message) = &mut message {
-            if let ClientRequest::CallToolRequest(request) = &mut message.request {
-                if let Some(capability) = capability {
-                    request.extensions.insert(ProtectedCapability(capability));
-                }
-            }
+        if let ClientJsonRpcMessage::Request(message) = &mut message
+            && let ClientRequest::CallToolRequest(request) = &mut message.request
+            && let Some(capability) = capability
+        {
+            request.extensions.insert(ProtectedCapability(capability));
         }
         Ok(message)
     }
@@ -101,17 +100,16 @@ impl StreamableHttpClient for ProtectedHttpClient {
         auth_header: Option<String>,
         custom_headers: HashMap<HeaderName, HeaderValue>,
     ) -> Result<StreamableHttpPostResponse, StreamableHttpError<Self::Error>> {
-        if let ClientJsonRpcMessage::Request(message) = &mut message {
-            if let ClientRequest::CallToolRequest(request) = &mut message.request {
-                if let Some(capability) = request.extensions.get::<ProtectedCapability>() {
-                    request
-                        .params
-                        .meta
-                        .get_or_insert_default()
-                        .0
-                        .insert(CALL_META_KEY.into(), capability.0.clone());
-                }
-            }
+        if let ClientJsonRpcMessage::Request(message) = &mut message
+            && let ClientRequest::CallToolRequest(request) = &mut message.request
+            && let Some(capability) = request.extensions.get::<ProtectedCapability>()
+        {
+            request
+                .params
+                .meta
+                .get_or_insert_default()
+                .0
+                .insert(CALL_META_KEY.into(), capability.0.clone());
         }
         // rmcp's reqwest adapter serializes immediately and does not log the
         // request. Its service and worker queues only saw opaque Extensions.

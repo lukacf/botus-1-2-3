@@ -82,12 +82,11 @@ pub struct CallLease {
 impl Drop for CallLease {
     fn drop(&mut self) {
         self.cancelled.cancel();
-        if let Some(registry) = self.registry.upgrade() {
-            if let Ok(mut state) = registry.state.lock() {
-                if let Some(entry) = state.entries.remove(&self.token) {
-                    state.bytes = state.bytes.saturating_sub(entry.bytes);
-                }
-            }
+        if let Some(registry) = self.registry.upgrade()
+            && let Ok(mut state) = registry.state.lock()
+            && let Some(entry) = state.entries.remove(&self.token)
+        {
+            state.bytes = state.bytes.saturating_sub(entry.bytes);
         }
     }
 }
