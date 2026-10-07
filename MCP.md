@@ -5,8 +5,8 @@ The spreadsheet engine, MCP relay and agent manual live in this package.
 MobKit owns workbook persistence and current agent access. There is no
 second Botus database.
 
-This integration is unpublished and undergoing runtime qualification. The
-exact coordinated dependencies are recorded in `Cargo.toml` and `Cargo.lock`.
+This package is unpublished. The exact coordinated dependencies are recorded
+in `Cargo.toml` and `Cargo.lock`.
 Do not mix arbitrary native and MobKit revisions. Cargo dependency patches
 must also appear in the consuming application's root manifest.
 

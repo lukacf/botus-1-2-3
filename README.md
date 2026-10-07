@@ -36,8 +36,8 @@ installing the skill alone does not provide tool access.
 point is `botus-1-2-3 mcp`. The optional `mcp` Cargo feature builds that
 executable; the default engine build remains independent of the runtime.
 The [MCP host guide](MCP.md) explains composition, persistence and caller
-authority. The implementation is being qualified against the
-[transport and caller-context contract](MCP-DESIGN.md).
+authority. The [transport and caller-context contract](MCP-DESIGN.md)
+specifies how each tool call is bound to its authenticated runtime context.
 
 Copy the manifests and complete skill to a new plugin directory with:
 
