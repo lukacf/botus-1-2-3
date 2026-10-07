@@ -698,6 +698,22 @@ fn private() -> DocumentAccess {
     }
 }
 
+fn assert_detached_fork_started(result: ToolResult) {
+    let started = success(result);
+    assert_eq!(
+        started["status"], "running",
+        "the host must return a detached fork start: {started}"
+    );
+    assert!(
+        started["job_id"].as_str().is_some_and(|id| !id.is_empty()),
+        "the detached fork must have a completion job: {started}"
+    );
+    assert!(
+        started.get("blocked_because").is_none(),
+        "fork access must be tested through the detached delivery route: {started}"
+    );
+}
+
 #[test]
 fn native_mcp_identity_fork_off_child_acl_and_read_only() {
     run_host_test(|| Box::pin(identity_fork_off_child_acl_and_read_only_body()));
@@ -728,7 +744,7 @@ async fn identity_fork_off_child_acl_and_read_only_body() {
     );
 
     let fork_read = host.client.plan("botus_read", describe(&id), true);
-    success(
+    assert_detached_fork_started(
         host.call(
             "owner",
             "fork_off",
@@ -1275,7 +1291,7 @@ async fn restart_create(path: &Path) -> (RestartEvidence, u64) {
     let id = created["receipt"]["document_id"].clone();
     let revision = created["receipt"]["revision"].clone();
     let fork_read = host.client.plan("botus_read", describe(&id), true);
-    success(
+    assert_detached_fork_started(
         host.call(
             "owner",
             "fork_off",
