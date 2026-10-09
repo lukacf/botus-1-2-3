@@ -2,13 +2,13 @@
 
 The optional `mobkit` feature supplies exactly two tools: `botus_read` and
 `botus_apply`. The default crate uses only Serde and Serde JSON. This package
-is unpublished; the native feature depends on reviewed upstream extension
-state and runtime authority changes, not a released compatibility promise.
+is unpublished. Native integration requires the exact Meerkat `=0.8.52`
+registry crates and a compatible MobKit revision with `extension-state`.
 
-For this unpublished revision, a consuming host must copy the
-`[patch.crates-io]` table from [Cargo.toml](Cargo.toml) into its own root
-manifest. Cargo does not inherit patches from dependencies. Keep the host
-and Botus on the same patched Meerkat version so their runtime types agree.
+Use the same native version and the same commit-pinned MobKit revision as
+[Cargo.toml](Cargo.toml) in the consuming host so their runtime types agree.
+The coordinated `Cargo.lock` must resolve that dependency set. The consuming
+application does not need a native Git patch table.
 
 ## Host registration
 
