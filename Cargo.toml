@@ -22,7 +22,7 @@ meerkat-core = { version = "=0.8.52", optional = true }
 meerkat-mcp = { version = "=0.8.52", optional = true }
 meerkat-client = { version = "=0.8.52", optional = true }
 meerkat-mob = { version = "=0.8.52", optional = true }
-meerkat-mobkit = { git = "https://github.com/lukacf/meerkat-mobkit", rev = "4d0a3d88d52f0180c9ac78c7e58b611fb230bf9a", features = ["extension-state"], optional = true }
+meerkat-mobkit = { git = "https://github.com/lukacf/meerkat-mobkit", rev = "f27d6630f0b2ddd42317b1d205ffe2a93c4f233b", features = ["extension-state"], optional = true }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"], optional = true }
 axum = { version = "0.8", optional = true }
 futures = { version = "0.3", optional = true }

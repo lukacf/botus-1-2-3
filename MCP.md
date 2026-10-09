@@ -48,6 +48,13 @@ Keep `listener` alive until the runtime has shut down. Select
 tools. The builder installs the context provider into its agent factories;
 it does not mount a duplicate native Botus bundle.
 
+Document-bound hosts wait for configured MCP connection attempts before native
+inherited tool visibility is resolved. The wait covers every MCP server
+configured for that agent, using each server's `connect_timeout_secs`. A failed
+connection completes the wait without making its tools available. This can
+increase startup latency; hosts without document bindings keep asynchronous
+MCP startup.
+
 The public descriptor contains the executable and arguments, a nonsecret
 binding marker, and empty environment slots. Only this descriptor belongs in
 profiles. MobKit fills the slots with the current host's endpoint and relay
