@@ -1,0 +1,32 @@
+pub const CHAPTERS: [(&str, &str, &str); 6] = [
+    (
+        "read",
+        "help",
+        include_str!("../../skills/botus-1-2-3/references/read.md"),
+    ),
+    (
+        "apply",
+        "help",
+        include_str!("../../skills/botus-1-2-3/references/apply.md"),
+    ),
+    (
+        "operations",
+        "notes",
+        include_str!("../../skills/botus-1-2-3/references/operations.md"),
+    ),
+    (
+        "formulas",
+        "help",
+        include_str!("../../skills/botus-1-2-3/references/formulas.md"),
+    ),
+    (
+        "access",
+        "help",
+        include_str!("../../skills/botus-1-2-3/references/access.md"),
+    ),
+    (
+        "limits",
+        "notes",
+        include_str!("../../skills/botus-1-2-3/references/limits-and-errors.md"),
+    ),
+];

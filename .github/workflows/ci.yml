@@ -40,25 +40,42 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: "0"
       CARGO_PROFILE_DEV_DEBUG: 0
       CARGO_PROFILE_TEST_DEBUG: 0
     steps:
       - uses: actions/checkout@v4
+      - name: Reclaim runner disk
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          df -h /
       - uses: dtolnay/rust-toolchain@1.97.0
         with:
           components: clippy
       - name: Locate isolated Cargo paths
         id: cargo_paths
         run: ./scripts/repo-cargo --print-env >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
+      - name: Cache Cargo sources
+        uses: actions/cache@v4
         with:
           path: |
             ${{ steps.cargo_paths.outputs.CARGO_HOME }}/registry
             ${{ steps.cargo_paths.outputs.CARGO_HOME }}/git
-            ${{ steps.cargo_paths.outputs.CARGO_TARGET_DIR }}
-          key: ${{ runner.os }}-rust-1.97.0-native-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml', '.github/workflows/ci.yml') }}
-          restore-keys: ${{ runner.os }}-rust-1.97.0-native-
+          key: ${{ runner.os }}-rust-1.97.0-native-sources-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-rust-1.97.0-native-sources-
+      # Reuse downloads across pin changes, but keep compiled outputs tied to
+      # exact dependency and profile inputs to avoid accumulating stale builds.
+      - name: Cache native build outputs
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.cargo_paths.outputs.CARGO_TARGET_DIR }}
+          key: ${{ runner.os }}-rust-1.97.0-native-target-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml', '.github/workflows/ci.yml') }}
       - run: make check-mobkit
       - run: make lint-mobkit
       - run: make test-mobkit
       - run: ./scripts/repo-cargo run --locked --example native_host --features mobkit
+      - run: make check-mcp
+      - run: make lint-mcp
+      - run: make test-installed-mcp

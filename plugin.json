@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "botus-1-2-3",
+  "version": "0.1.0",
+  "description": "Persistent agent spreadsheets through two MCP tools. Recalculate like it is 1989.",
+  "author": { "name": "Luka" },
+  "homepage": "https://github.com/lukacf/botus-1-2-3",
+  "repository": "https://github.com/lukacf/botus-1-2-3",
+  "license": "MIT OR Apache-2.0",
+  "keywords": ["spreadsheet", "mcp", "agents", "persistence", "lotus"]
+}

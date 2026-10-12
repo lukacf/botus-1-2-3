@@ -2,13 +2,13 @@
 
 The optional `mobkit` feature supplies exactly two tools: `botus_read` and
 `botus_apply`. The default crate uses only Serde and Serde JSON. This package
-is unpublished; the native feature depends on reviewed upstream extension
-state and runtime authority changes, not a released compatibility promise.
+is unpublished. Native integration requires the exact Meerkat `=0.8.52`
+registry crates and a compatible MobKit revision with `extension-state`.
 
-For this unpublished revision, a consuming host must copy the
-`[patch.crates-io]` table from [Cargo.toml](Cargo.toml) into its own root
-manifest. Cargo does not inherit patches from dependencies. Keep the host
-and Botus on the same patched Meerkat version so their runtime types agree.
+Use the same native version and the same commit-pinned MobKit revision as
+[Cargo.toml](Cargo.toml) in the consuming host so their runtime types agree.
+The coordinated `Cargo.lock` must resolve that dependency set. The consuming
+application does not need a native Git patch table.
 
 ## Host registration
 
@@ -64,7 +64,7 @@ history. Registering this bundle with that store returns
 storage or tool factory activation. A host needs a continuity provider that
 supplies the required authority history.
 
-## Two keys, no function-key overlay
+## Create, read and edit
 
 Create with a unique request ID. Ordinary strings are always text; formula
 objects are explicit.
@@ -91,18 +91,25 @@ revision. Read with:
 {"action":"read","id":"document-id-from-receipt","query":{"range":"A1:D2"}}
 ```
 
-`botus_read` also accepts `identity`, `list`, `describe` and `help`. Fetch
-detailed help on demand with `{"action":"help","topic":"operations"}`.
-Other topics are `overview`, `formulas`, `access` and `limits`. The access help examples are
-serialized from the actual host types. The concise initial tool definitions
-have a 6 KiB combined regression budget.
+`botus_read` also accepts `identity`, `list`, `describe` and `help`. Fetch a
+complete reference chapter without shell access with
+`botus_read {"action":"help","topic":"read"}` or
+`botus_read {"action":"help","topic":"apply"}`. Other chapter topics are
+`operations`, `formulas`, `access`, and `limits`; `overview` is a compact index.
+Chapter text is in `help`, except `operations` and `limits` use `notes`. Access
+examples still serialize the actual host types, and `limits` reports the
+current host configuration. Chapters are embedded from the Markdown files
+bundled with the skill. Help needs the same authenticated caller and response
+budget as other reads; an oversized complete chapter fails with `limit`,
+without truncation. The concise initial tool definitions have a 6 KiB combined
+regression budget.
 
 Use the same request ID and original request to retry a lost response. A
 replay returns the exact durable receipt with `replayed:true`, omitting
 calculated cells and change statistics. Read again for current cells. A
 changed request under the same ID fails. A concurrent duplicate which loses
 the commit race also returns receipt-only. Only the actual commit returns
-newly calculated cells, so the virtual F9 key cannot print a phantom result.
+newly calculated cells.
 
 ## Share with a child's reported principal
 
@@ -178,7 +185,8 @@ it is infrastructure feedback rather than an access-denied decision. The
 adapter does not turn unavailable identity into an anonymous caller.
 
 Owners administer workbooks. Reader and Editor grants do not confer sharing,
-transfer or deletion rights. A requested owner is only a recipient for the
+transfer or deletion rights. Naming a sheet `Management` does not change
+these permissions. A requested owner is only a recipient for the
 host to authorize. Fork and descendant access always depends on the host's
 verified creation history and current policy. Missing or unsupported
 provenance fails closed; this guide makes no claim for remote placements or

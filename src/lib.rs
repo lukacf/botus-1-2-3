@@ -11,6 +11,9 @@ mod value;
 #[cfg(feature = "mobkit")]
 pub mod native;
 
+#[cfg(feature = "mcp")]
+pub mod mcp;
+
 pub use engine::{
     ApplyResult, Cell, ChangedRange, EngineError, ErrorCode, ErrorValue, Filter, FilterOp, Formula,
     Limits, NamedRange, Operation, ReadRequest, ReadResult, ReadView, Sheet, SheetDescription,

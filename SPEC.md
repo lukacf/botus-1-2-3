@@ -11,9 +11,9 @@ workspace. Package and repository name: `botus-1-2-3`. Rust crate identifier:
 integration through optional dependencies. An application which omits the
 package gets no tool definitions, prompts or spreadsheet dependency.
 
-Lotus 1-2-3 Release 2.2 inspires the interaction model, not a binary
-compatibility promise. WK1 is not required. Humor belongs in docs, examples
-and opt-in display, with no added turns, randomized output or noisy errors.
+Lotus 1-2-3 Release 2.2 inspires the interaction model. Workbooks use
+versioned JSON; WK1 and Lotus binary compatibility are not provided.
+Tool responses stay concise and bounded.
 
 ## Workbook model
 
@@ -145,14 +145,18 @@ Only authorized document deletion or a defined retention process may do so.
 
 ## Initial boundaries
 
-Required delivery: tested pure engine, compact native tools, MobKit-backed
-durable storage integration, owner/sharing/lineage behavior, example host,
-and restart/concurrency/access tests. A static golden file or fake memory
-store is not evidence for provider integration.
+Required delivery: tested pure engine, compact tools exposed through a real
+MCP server, an optional native adapter, MobKit-backed durable storage,
+owner/sharing/lineage behavior, an installable package with a self-contained
+skill and full read/apply references, example host, and
+restart/concurrency/access tests. A static golden file or fake memory store
+is not evidence for provider integration. See [MCP-DESIGN.md](MCP-DESIGN.md)
+for the caller-context and transport contract.
 
 Deferred explicitly: GUI, printer emulation, Lotus macro language, WK1
-fidelity, Excel compatibility, arbitrary scripts, advanced charts and a
-standalone MCP deployment. Do not advertise these as implemented.
+fidelity, Excel compatibility, arbitrary scripts and advanced charts.
+An independent Botus database is not part of the MCP deployment: MobKit
+continues to own persistence and authority.
 
 ## Acceptance evidence
 
@@ -180,9 +184,9 @@ standalone MCP deployment. Do not advertise these as implemented.
 - Isolation: realm, namespace and stable-identity scoping; untrusted input
   cannot manufacture actor, owner-management or lineage claims.
 - Packaging: default core build lacks runtime dependencies, adapter feature
-  compiles and runs its tests, all commands use the repository wrapper.
+  compiles and runs its tests, a real MCP client exercises the installed
+  entry point, all skill reference assets ship in the package, and all
+  commands use the repository wrapper.
 - Review: adversarial findings are fixed or explicitly recorded as release
   blockers. Local validation, PR CI, merge and package publication are
   separate evidence states.
-
-The release slogan is optional. The durable commit is not.
