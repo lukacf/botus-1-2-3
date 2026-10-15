@@ -959,16 +959,20 @@ async fn child_supply_and_copied_host_only_descriptor_body() {
             assert_eq!(member_id, "helper");
             assert_ne!(helper, owner);
         } else {
+            // The delegate completes after the model handles its refused tool
+            // call. Check the helper's actual refusal, not orchestration status.
+            success(delegation);
+            let helper_result = host.client.result(&delegated).await;
             assert!(
-                delegation.is_error,
+                helper_result.is_error,
                 "HostOnly must not be supplied to implicit delegates"
             );
             assert!(
-                delegation
+                helper_result
                     .text_content()
                     .contains("Tool not found: botus_read"),
                 "delegate failed for a different reason: {}",
-                delegation.text_content()
+                helper_result.text_content()
             );
             let plans = host.client.plans.lock().unwrap();
             let helper = &plans[&delegated];
