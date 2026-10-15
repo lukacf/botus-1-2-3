@@ -134,9 +134,9 @@ the actual caller from dispatch context every time.
 
 Persistence does not change native member lifetime. Temporary delegate
 helpers and their forks retire when delegation completes; their disappearance
-does not delete the workbook. Meta's implicit child mobs currently have
-in-memory journals. Restart lineage guarantees apply to persistent mobs and
-members. Do not claim that a durable workbook makes an ephemeral child mob
+does not delete the workbook. Restart lineage guarantees require the host's
+persisted native journals and creation history. Do not claim that a durable
+workbook makes an ephemeral child mob
 durable, or add a private Botus lineage archive to simulate that guarantee.
 
 Restoring a session or respawning a stable agent must not change workbook

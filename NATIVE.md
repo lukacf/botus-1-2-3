@@ -200,10 +200,10 @@ the same name does not. The host's identity authority must explicitly bind
 a durable identity to a successor before that successor can act as it.
 
 Temporary delegate helpers and their forks retire when the delegation
-completes. Meta implicit child mobs currently have in-memory journals.
-These agents can share the same durable workbook while active; retiring
-them leaves the workbook intact. Restart acceptance for members and forks
-of a persistent root mob is tracked separately in the Meta tests.
+completes. These agents can share the same durable workbook while active;
+retiring them leaves the workbook intact. Restart lineage requires the
+host's retained native mob journal and creation history. Durable workbook
+storage alone cannot restore a missing agent or prove its authority.
 
 Fork access uses the current document ACL and the last persisted effective
 native policies of the exact source and executing sessions. The factory
