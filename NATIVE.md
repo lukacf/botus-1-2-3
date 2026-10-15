@@ -1,11 +1,11 @@
 # The filing cabinet belongs to the host
 
-The optional `mobkit` feature supplies exactly two tools: `botus_read` and
+The optional `meta` feature supplies exactly two tools: `botus_read` and
 `botus_apply`. The default crate uses only Serde and Serde JSON. This package
-is unpublished. Native integration requires the exact Meerkat `=0.8.52`
-registry crates and a compatible MobKit revision with `extension-state`.
+is not published to a package registry. Native integration uses the published
+Meerkat `=0.9.0` and `meerkat-meta =0.9.0` crates with `extension-state`.
 
-Use the same native version and the same commit-pinned MobKit revision as
+Use the same native and Meta versions as
 [Cargo.toml](Cargo.toml) in the consuming host so their runtime types agree.
 The coordinated `Cargo.lock` must resolve that dependency set. The consuming
 application does not need a native Git patch table.
@@ -30,7 +30,7 @@ let builder = builder.register_tool_bundle_factory(
 );
 ```
 
-The factory refuses a different document namespace. MobKit owns storage,
+The factory refuses a different document namespace. Meta owns storage,
 realm binding, current caller resolution, revision checks, access control and
 retry receipts. Botus does not select a path or open a database. Unsupported
 or non-durable storage refuses activation. The native document limit is
@@ -200,10 +200,10 @@ the same name does not. The host's identity authority must explicitly bind
 a durable identity to a successor before that successor can act as it.
 
 Temporary delegate helpers and their forks retire when the delegation
-completes. MobKit implicit child mobs currently have in-memory journals.
+completes. Meta implicit child mobs currently have in-memory journals.
 These agents can share the same durable workbook while active; retiring
 them leaves the workbook intact. Restart acceptance for members and forks
-of a persistent root mob is tracked separately in the MobKit tests.
+of a persistent root mob is tracked separately in the Meta tests.
 
 Fork access uses the current document ACL and the last persisted effective
 native policies of the exact source and executing sessions. The factory
@@ -227,9 +227,9 @@ workbook dumps, WK1 and macros are deferred.
 
 `tests/native.rs` exercises native dispatch with the real SQLite document
 backend and an explicit test authority. Its reopen tests close and reopen
-that backend; they do not by themselves prove MobKit host startup or runtime
+that backend; they do not by themselves prove Meta host startup or runtime
 lineage reconstruction. Full host restart and provenance acceptance require
-the separate MobKit runtime tests. Keep those evidence states separate when
+the separate Meta runtime tests. Keep those evidence states separate when
 shipping a host integration.
 
 The unavailable-authority regression supplies a valid origin session whose
@@ -237,7 +237,7 @@ test resolver returns `AuthorityUnavailable`. It checks the fixed infrastructure
 error for create, identity, help, read and retry, an empty real SQLite document
 list after the failed create, and a successful sibling create through the
 same dispatcher.
-It does not itself cancel or reopen a real native identity. MobKit's separate
+It does not itself cancel or reopen a real native identity. Meta's separate
 cancellation and restart tests establish that lifecycle behavior.
 
 The identity regression uses a parent and a Worker child from that explicit
@@ -245,7 +245,7 @@ test authority. Parent/child/parent calls through one shared dispatcher must
 return their distinct current principals without creating any documents.
 It covers maximal escaped Worker identifiers, the serialized response bound
 and strict rejection of caller-authority input fields. This fixture does not
-replace MobKit's runtime provenance tests.
+replace Meta's runtime provenance tests.
 
 The adapter retry regression also controls this ordering: an identical edit
 commits after a missing-receipt lookup, then the owner deletes the document

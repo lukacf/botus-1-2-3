@@ -2,15 +2,20 @@
 
 Botus exposes `botus_read` and `botus_apply` through a real stdio MCP server.
 The spreadsheet engine, MCP relay and agent manual live in this package.
-MobKit owns workbook persistence and current agent access. There is no
+Meta owns workbook persistence and current agent access. There is no
 second Botus database.
 
-This package is unpublished. Integration requires the exact Meerkat
-`=0.8.52` registry crates and a compatible, commit-pinned MobKit revision
-with `extension-state`. The host and Botus must use the same native version
-and MobKit revision so their runtime types agree. `Cargo.toml` records the
+This package is not published to a package registry. Integration uses the
+published Meerkat `=0.9.0` and `meerkat-meta =0.9.0` crates with
+`extension-state`. The host and Botus must use the same native and Meta
+versions so their runtime types agree. `Cargo.toml` records the
 selections; the coordinated `Cargo.lock` is required for locked installation.
 The consuming application does not need a native Git patch table.
+
+Botus targets 0.9.x hosts. Earlier development builds used 0.8 storage and
+continuity schema domains; opening those stores with 0.9 is not a supported
+migration. Start this version with a fresh 0.9 host state directory, and keep
+any existing development stores intact.
 
 ## Install the package
 
@@ -57,7 +62,7 @@ MCP startup.
 
 The public descriptor contains the executable and arguments, a nonsecret
 binding marker, and empty environment slots. Only this descriptor belongs in
-profiles. MobKit fills the slots with the current host's endpoint and relay
+profiles. Meta fills the slots with the current host's endpoint and relay
 credential after the session build hook, including child, fork and restored
 session builds. A missing registration or changed descriptor refuses the
 build. An old saved credential is never the restoration mechanism.
@@ -89,7 +94,7 @@ let builder = builder
 ```
 
 Import `persistent_mob_storage` from
-`meerkat_mobkit::mob_composition_manifest`. The paired store retains the mob
+`meerkat_meta::mob_composition_manifest`. The paired store retains the mob
 journal, identity state and fork records. `persistent_state()` alone does
 not make mob lineage durable. On restart, reopen the same host stores and
 mob journal, start a new listener, register its new binding, and reuse the
@@ -105,7 +110,7 @@ for this integration.
 Each actual native dispatch supplies its current executing session. A
 single-use, bounded, short-lived correlation binds that session to the exact
 connection, operation, arguments and native origin projection. The host
-consumes it before consulting the existing current MobKit resolver.
+consumes it before consulting the existing current Meta resolver.
 Workbook ownership and grants stay in the document service.
 
 The current native origin codec emits `{"kind":"unavailable"}`. That value
@@ -120,7 +125,7 @@ The standalone stdio relay refuses missing host configuration.
 ## Verification and recovery
 
 `make test-mcp` exercises the real stdio/HTTP transport with explicit fixture
-authority. `make test-mcp-host` additionally exercises the actual MobKit
+authority. `make test-mcp-host` additionally exercises the actual Meta
 composition and its runtime identities. Fixture tests alone do not establish
 parent, child or fork integration. Consult the pull request's exact-head
 validation record for completed qualification.
@@ -133,7 +138,7 @@ source installation and real MCP behavior; it does not publish a package or
 qualify a release-profile binary.
 
 After an uncertain write result, use the same Botus request ID and unchanged
-arguments. The runtime issues a new transport correlation. MobKit's durable
+arguments. The runtime issues a new transport correlation. Meta's durable
 receipt resolves whether the original write committed. Cancellation cannot
 undo a write that already committed.
 

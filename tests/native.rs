@@ -1,6 +1,6 @@
-#![cfg(feature = "mobkit")]
+#![cfg(feature = "meta")]
 //! Adapter tests use the real SQLite backend and a deliberately explicit test
-//! authority. Runtime lineage and full MobKit host restart need host tests too.
+//! authority. Runtime lineage and full Meta host restart need host tests too.
 
 #[path = "support/help_chapters.rs"]
 mod help_chapters;
@@ -17,7 +17,7 @@ use meerkat_core::{
     AgentToolDispatcher, SessionId, ToolCallView, ToolDispatchContext, ToolError,
     ToolMutationClass, ToolProvenance, ToolSourceKind,
 };
-use meerkat_mobkit::extension_state::{
+use meerkat_meta::extension_state::{
     ToolBundleContext, ToolBundleFactory, ToolCallerResolver, documents::*,
 };
 use serde_json::{Value, json};
@@ -42,7 +42,7 @@ impl ToolCallerResolver for TestAuthority {
         &self,
         context: &ToolDispatchContext,
         requested_owner: Option<&Owner>,
-    ) -> meerkat_mobkit::extension_state::documents::Result<HostAccessContext> {
+    ) -> meerkat_meta::extension_state::documents::Result<HostAccessContext> {
         self.calls.fetch_add(1, Ordering::SeqCst);
         let session = context
             .origin_session_id()
@@ -223,10 +223,7 @@ async fn schemas_are_compact_and_authority_is_never_an_argument() -> TestResult 
     assert_eq!(definitions.len(), 2);
     assert!(serialized_definitions.len() <= MAX_TOOL_DEFINITION_BYTES);
     let wire_definitions: Vec<Value> = serde_json::from_slice(&serialized_definitions)?;
-    let bundle_provenance = ToolProvenance {
-        kind: ToolSourceKind::RustBundle,
-        source_id: NAMESPACE.into(),
-    };
+    let bundle_provenance = ToolProvenance::new(ToolSourceKind::RustBundle, NAMESPACE);
     for ((definition, wire), name) in definitions
         .iter()
         .zip(&wire_definitions)
@@ -489,7 +486,7 @@ async fn unavailable_authority_is_infrastructure_feedback_and_sibling_remains_us
     let temporary = tempfile::tempdir()?;
     let permitted = actor("permitted-sibling")?;
     let unavailable = actor("unpublished-identity")?;
-    // This fixture models the resolver result, not a real MobKit cancellation.
+    // This fixture models the resolver result, not a real Meta cancellation.
     // Both calls have valid origin sessions; only the sibling resolves authority.
     let tools = tools(
         &temporary.path().join("host.sqlite3"),
@@ -586,7 +583,7 @@ async fn ownership_transfer_requires_management_and_preserves_acl_for_new_owner(
             &self,
             context: &ToolDispatchContext,
             requested_owner: Option<&Owner>,
-        ) -> meerkat_mobkit::extension_state::documents::Result<HostAccessContext> {
+        ) -> meerkat_meta::extension_state::documents::Result<HostAccessContext> {
             if requested_owner.is_some_and(|owner| owner != &self.destination) {
                 return Err(Error::NotFound);
             }
@@ -912,7 +909,7 @@ impl ExtensionDocumentStore for SimultaneousStore {
         scope: &DocumentScope,
         caller: &HostAccessContext,
         id: &DocumentId,
-    ) -> meerkat_mobkit::extension_state::documents::Result<Document> {
+    ) -> meerkat_meta::extension_state::documents::Result<Document> {
         self.inner.get(scope, caller, id).await
     }
     async fn list(
@@ -920,7 +917,7 @@ impl ExtensionDocumentStore for SimultaneousStore {
         scope: &DocumentScope,
         caller: &HostAccessContext,
         request: ListRequest,
-    ) -> meerkat_mobkit::extension_state::documents::Result<DocumentPage> {
+    ) -> meerkat_meta::extension_state::documents::Result<DocumentPage> {
         self.inner.list(scope, caller, request).await
     }
     async fn lookup_receipt(
@@ -928,7 +925,7 @@ impl ExtensionDocumentStore for SimultaneousStore {
         scope: &DocumentScope,
         caller: &HostAccessContext,
         request: &RequestIdentity,
-    ) -> meerkat_mobkit::extension_state::documents::Result<Option<MutationReceipt>> {
+    ) -> meerkat_meta::extension_state::documents::Result<Option<MutationReceipt>> {
         self.inner.lookup_receipt(scope, caller, request).await
     }
     async fn mutate(
@@ -937,7 +934,7 @@ impl ExtensionDocumentStore for SimultaneousStore {
         caller: &HostAccessContext,
         request: &RequestIdentity,
         mutation: Mutation,
-    ) -> meerkat_mobkit::extension_state::documents::Result<MutationOutcome> {
+    ) -> meerkat_meta::extension_state::documents::Result<MutationOutcome> {
         if matches!(mutation, Mutation::Replace { .. }) {
             tokio::time::timeout(std::time::Duration::from_secs(10), self.gate.wait())
                 .await
@@ -999,7 +996,7 @@ impl ExtensionDocumentStore for DeleteRaceStore {
         scope: &DocumentScope,
         caller: &HostAccessContext,
         id: &DocumentId,
-    ) -> meerkat_mobkit::extension_state::documents::Result<Document> {
+    ) -> meerkat_meta::extension_state::documents::Result<Document> {
         self.inner.get(scope, caller, id).await
     }
     async fn list(
@@ -1007,7 +1004,7 @@ impl ExtensionDocumentStore for DeleteRaceStore {
         scope: &DocumentScope,
         caller: &HostAccessContext,
         request: ListRequest,
-    ) -> meerkat_mobkit::extension_state::documents::Result<DocumentPage> {
+    ) -> meerkat_meta::extension_state::documents::Result<DocumentPage> {
         self.inner.list(scope, caller, request).await
     }
     async fn lookup_receipt(
@@ -1015,7 +1012,7 @@ impl ExtensionDocumentStore for DeleteRaceStore {
         scope: &DocumentScope,
         caller: &HostAccessContext,
         request: &RequestIdentity,
-    ) -> meerkat_mobkit::extension_state::documents::Result<Option<MutationReceipt>> {
+    ) -> meerkat_meta::extension_state::documents::Result<Option<MutationReceipt>> {
         let result = self.inner.lookup_receipt(scope, caller, request).await?;
         if result.is_none() && self.pause_next_miss.swap(false, Ordering::SeqCst) {
             self.missed.notify_one();
@@ -1029,7 +1026,7 @@ impl ExtensionDocumentStore for DeleteRaceStore {
         caller: &HostAccessContext,
         request: &RequestIdentity,
         mutation: Mutation,
-    ) -> meerkat_mobkit::extension_state::documents::Result<MutationOutcome> {
+    ) -> meerkat_meta::extension_state::documents::Result<MutationOutcome> {
         self.inner.mutate(scope, caller, request, mutation).await
     }
 }

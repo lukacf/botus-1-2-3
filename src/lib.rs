@@ -8,7 +8,7 @@ mod formula;
 mod grid;
 mod value;
 
-#[cfg(feature = "mobkit")]
+#[cfg(feature = "meta")]
 pub mod native;
 
 #[cfg(feature = "mcp")]

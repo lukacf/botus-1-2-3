@@ -1,13 +1,13 @@
 # Botus 1-2-3 implementation specification
 
-Status: approved product direction, implementation contract. The MobKit
+Status: approved product direction, implementation contract. The Meta
 storage/lineage design is reviewed separately before integration.
 
 ## Purpose and packaging
 
 Provide agents without filesystem or shell tools a durable spreadsheet
 workspace. Package and repository name: `botus-1-2-3`. Rust crate identifier:
-`botus_1_2_3`. Keep the engine independent of Meerkat/MobKit and enable native
+`botus_1_2_3`. Keep the engine independent of Meerkat/Meta and enable native
 integration through optional dependencies. An application which omits the
 package gets no tool definitions, prompts or spreadsheet dependency.
 
@@ -103,9 +103,9 @@ edit batch produces one durable commit and a short receipt with revision,
 changed ranges/counts and requested cells. A repeated request ID must not
 duplicate writes, while changed content reusing the same ID is rejected.
 
-## MobKit persistence and authority
+## Meta persistence and authority
 
-Botus consumes MobKit's configured, provider-owned extension document
+Botus consumes Meta's configured, provider-owned extension document
 service. It must not open its own independent database, choose ambient
 paths or stash workbooks in sessions, identity records or semantic memory.
 The host storage layer owns durable documents, namespaces, access metadata
@@ -134,7 +134,7 @@ the actual caller from dispatch context every time.
 
 Persistence does not change native member lifetime. Temporary delegate
 helpers and their forks retire when delegation completes; their disappearance
-does not delete the workbook. MobKit's implicit child mobs currently have
+does not delete the workbook. Meta's implicit child mobs currently have
 in-memory journals. Restart lineage guarantees apply to persistent mobs and
 members. Do not claim that a durable workbook makes an ephemeral child mob
 durable, or add a private Botus lineage archive to simulate that guarantee.
@@ -146,7 +146,7 @@ Only authorized document deletion or a defined retention process may do so.
 ## Initial boundaries
 
 Required delivery: tested pure engine, compact tools exposed through a real
-MCP server, an optional native adapter, MobKit-backed durable storage,
+MCP server, an optional native adapter, Meta-backed durable storage,
 owner/sharing/lineage behavior, an installable package with a self-contained
 skill and full read/apply references, example host, and
 restart/concurrency/access tests. A static golden file or fake memory store
@@ -155,7 +155,7 @@ for the caller-context and transport contract.
 
 Deferred explicitly: GUI, printer emulation, Lotus macro language, WK1
 fidelity, Excel compatibility, arbitrary scripts and advanced charts.
-An independent Botus database is not part of the MCP deployment: MobKit
+An independent Botus database is not part of the MCP deployment: Meta
 continues to own persistence and authority.
 
 ## Acceptance evidence
@@ -166,7 +166,7 @@ continues to own persistence and authority.
 - Bounds: sparse reads, huge range refusal/pagination, expression depth,
   evaluated-cell/work budget, document size and actual response bytes.
 - Integration: create/edit/read through native dispatch; close all storage
-  handles, restart the MobKit host and recover the same workbook and ACL.
+  handles, restart the Meta host and recover the same workbook and ACL.
 - Access: another agent cannot list, read, change, share or delete private
   data; Reader cannot edit; Editor cannot administer; unauthorized and
   missing IDs have equivalent externally visible errors.

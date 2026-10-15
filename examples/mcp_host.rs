@@ -2,15 +2,13 @@
 //! The returned listener must live at least as long as the runtime.
 use botus_1_2_3::mcp::{BotusMcpHost, BotusMcpListener};
 use meerkat_core::McpServerConfig;
-use meerkat_mobkit::{
-    extension_state::ChildMcpAvailability, unified_runtime::UnifiedRuntimeBuilder,
-};
+use meerkat_meta::{extension_state::ChildMcpAvailability, unified_runtime::UnifiedRuntimeBuilder};
 use std::sync::Arc;
 
 /// Register the service before building the runtime. Select the returned
 /// public descriptor in agent profiles; it contains no process credential.
 /// Ordinary children receive tool availability, while workbook grants remain
-/// private by default. Forks still use MobKit's proven access lineage.
+/// private by default. Forks still use Meta's proven access lineage.
 pub async fn prepare_botus(
     builder: UnifiedRuntimeBuilder,
     relay_binary: &str,
@@ -25,7 +23,7 @@ pub async fn prepare_botus(
 }
 
 fn main() {
-    println!("prepare_botus registers the service with your configured MobKit host.");
+    println!("prepare_botus registers the service with your configured Meta host.");
     println!("Select its public MCP descriptor in profiles and keep the listener alive.");
-    println!("The filing cabinet is still MobKit's. F9 has merely discovered TCP/IP.");
+    println!("The filing cabinet is still Meta's. F9 has merely discovered TCP/IP.");
 }

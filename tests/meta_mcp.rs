@@ -1,7 +1,7 @@
 #![cfg(feature = "mcp-host-tests")]
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 //! Full host acceptance: model loop -> native router -> stdio relay -> HTTP
-//! MCP -> MobKit's current identity and durable document authority. No fixture
+//! MCP -> Meta's current identity and durable document authority. No fixture
 //! caller resolver, caller token, or direct document mutation is used here.
 
 #[path = "support/relay_binary.rs"]
@@ -20,17 +20,17 @@ use meerkat_core::{
     types::{ContentInput, HandlingMode, StopReason, SystemNoticeKind, ToolCallView, ToolResult},
 };
 use meerkat_mcp::{McpCallContext, McpCallContextError, McpCallContextProvider, McpCallTarget};
-use meerkat_mob::{
-    AgentIdentity, MemberCreationProvenance, MobDefinition, MobHandle, ProfileBinding, ProfileName,
-    SpawnMemberSpec,
-};
-use meerkat_mobkit::{
+use meerkat_meta::{
     MobTerminalShutdownOutcome, UnifiedRuntime, UnifiedRuntimeShutdownReport,
     extension_state::{
         ChildMcpAvailability, HostMcpDocumentBinding,
         documents::{Audience, DocumentAccess, Grant, Owner, Principal, Reach, Role},
     },
     mob_composition_manifest::persistent_mob_storage,
+};
+use meerkat_mob::{
+    AgentIdentity, MemberCreationProvenance, MobDefinition, MobHandle, ProfileBinding, ProfileName,
+    SpawnMemberSpec,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -463,7 +463,7 @@ impl McpCallContextProvider for ObservedProvider {
         McpCallContextProvider::prepare(&self.inner, target, call, context).await
     }
     // Deliberately retain the default Unknown classification: the validated
-    // MobKit document requirements, not this wrapper, classify the tools.
+    // Meta document requirements, not this wrapper, classify the tools.
 }
 
 struct Host {

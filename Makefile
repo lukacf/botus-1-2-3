@@ -1,6 +1,6 @@
 CARGO := ./scripts/repo-cargo
 
-.PHONY: check test lint fmt check-mobkit test-mobkit lint-mobkit check-mcp test-mcp lint-mcp test-mcp-host test-installed-mcp
+.PHONY: check test lint fmt check-meta test-meta lint-meta check-mcp test-mcp lint-mcp test-mcp-host test-installed-mcp
 check:
 	$(CARGO) check --locked --all-targets
 test:
@@ -9,12 +9,12 @@ lint:
 	$(CARGO) clippy --locked --all-targets -- -D warnings
 fmt:
 	$(CARGO) fmt --all -- --check
-check-mobkit:
-	$(CARGO) check --locked --all-targets --features mobkit
-test-mobkit:
-	$(CARGO) test --locked --all-targets --features mobkit
-lint-mobkit:
-	$(CARGO) clippy --locked --all-targets --features mobkit -- -D warnings
+check-meta:
+	$(CARGO) check --locked --all-targets --features meta
+test-meta:
+	$(CARGO) test --locked --all-targets --features meta
+lint-meta:
+	$(CARGO) clippy --locked --all-targets --features meta -- -D warnings
 check-mcp:
 	$(CARGO) check --locked --all-targets --features mcp
 test-mcp:
