@@ -14,6 +14,22 @@ See [SPEC.md](SPEC.md) for the implementation contract and acceptance tests.
 The [little green spreadsheet manual](USAGE.md) covers values, formulas,
 copying, sorting and bounded reads.
 
+## Status and installation
+
+Botus is available from source under **MIT OR Apache-2.0**, at your option.
+It is not published to a package registry. The default Rust build provides
+the standalone spreadsheet engine; the optional `mcp` feature adds the MCP
+server and host integration.
+
+The validated host integration uses Meerkat **0.8.52** and the exact MobKit
+revision in [Cargo.toml](Cargo.toml). Use that same dependency set in the
+host. The upstream storage and MCP support also ships in Meerkat Meta 0.9,
+but this Botus package has not yet been qualified against that version.
+
+For installation and host setup, follow [MCP.md](MCP.md). Agents need a
+configured host for persistent storage and authenticated access; the skill
+and executable alone do not provide those services.
+
 The companion [agent skill](skills/botus-1-2-3/SKILL.md) contains the complete
 functional reference, with separate chapters for
 [read](skills/botus-1-2-3/references/read.md),
@@ -93,6 +109,15 @@ or the [native integration guide](NATIVE.md). The [engine review](REVIEW-engine.
 records its findings and fixes; [the manual](USAGE.md) describes supported
 operations and limits.
 
-The package is unpublished. Native storage and runtime acceptance are
-separate from the pure-engine test suite; the integration guide records
-that boundary. WK1, macros and protected exports remain deferred.
+The pinned host integration has passed installed-relay acceptance covering
+parent, child, fork, restart and access revocation behavior. This is separate
+from the pure-engine test suite and does not establish compatibility with
+other runtime versions. WK1, macros and protected exports remain deferred.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development and verification.
+
+## License
+
+Choose either the [MIT license](LICENSE-MIT) or
+[Apache License 2.0](LICENSE-APACHE). Contributions are accepted under the
+same dual license.
