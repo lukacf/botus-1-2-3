@@ -205,6 +205,12 @@ retiring them leaves the workbook intact. Restart lineage requires the
 host's retained native mob journal and creation history. Durable workbook
 storage alone cannot restore a missing agent or prove its authority.
 
+Meta 0.9.0 has an upstream child-mob destruction limitation: the destroyed
+child's store and process resources can remain resident, and a still-live
+former owner can create a new document owned by that destroyed mob. Do not
+use mob destruction as a substitute for workbook deletion or access-policy
+changes. Botus does not override the host's lifecycle authority.
+
 Fork access uses the current document ACL and the last persisted effective
 native policies of the exact source and executing sessions. The factory
 combines profile restrictions with the spawn policy in that effective field;
