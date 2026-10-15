@@ -17,7 +17,7 @@ make test
 ```
 
 The default build tests the spreadsheet engine without runtime dependencies.
-`make test-mobkit` covers the native adapter. `make test-installed-mcp`
+`make test-meta` covers the native adapter. `make test-installed-mcp`
 installs a relay in a temporary directory, checks its plugin and skill assets,
 and exercises the actual host integration. These integration targets require
 the exact dependencies in `Cargo.toml` and `Cargo.lock` and substantially more

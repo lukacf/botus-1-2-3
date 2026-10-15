@@ -66,13 +66,13 @@ request fewer rows or narrower columns.
 ## Saving and restarting
 
 `Workbook::to_json` and `Workbook::from_json` validate the versioned payload.
-They do not choose a database or a file path. MobKit owns persistence and
+They do not choose a database or a file path. Meta owns persistence and
 access control; the native adapter uses its configured storage provider.
 An acknowledged durable write must survive a host restart. The adapter
 refuses activation if the host cannot supply durable storage.
 
 After an uncertain write result, retry with the same request ID and unchanged
-request. MobKit returns the original durable receipt if the write committed.
+request. Meta returns the original durable receipt if the write committed.
 After a revision conflict, read the current state, reconcile the change and
 submit it with a new request ID. See the [apply reference](skills/botus-1-2-3/references/apply.md)
 for the complete request and receipt rules.

@@ -1,7 +1,7 @@
 #![cfg(feature = "mcp")]
-//! Real stdio child -> HTTP MCP -> original MobKit document service tests.
+//! Real stdio child -> HTTP MCP -> original Meta document service tests.
 //! The resolver is explicit test authority; full native lineage belongs in the
-//! MobKit host acceptance suite, not in a second identity implementation here.
+//! Meta host acceptance suite, not in a second identity implementation here.
 
 #[path = "support/help_chapters.rs"]
 mod help_chapters;
@@ -17,7 +17,7 @@ use meerkat_core::{
     CALL_ORIGIN_META_KEY, McpServerConfig, SessionId, ToolDispatchContext, WireCallOrigin,
     mcp_config::McpTransportConfig,
 };
-use meerkat_mobkit::extension_state::{
+use meerkat_meta::extension_state::{
     ToolBundleContext, ToolBundleFactory, ToolCallerResolver, documents::*,
 };
 use rmcp::{

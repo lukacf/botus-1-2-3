@@ -1,7 +1,7 @@
 //! Add Botus to a host which already chose storage, realm and identity policy.
 //! This example checks composition, not a running host or restart acceptance.
 use botus_1_2_3::native::{BotusToolFactory, MAX_TOOL_DEFINITION_BYTES, tool_definitions};
-use meerkat_mobkit::unified_runtime::UnifiedRuntimeBuilder;
+use meerkat_meta::unified_runtime::UnifiedRuntimeBuilder;
 use std::sync::Arc;
 
 /// Call before `builder.build().await` and before members can run.
