@@ -110,10 +110,11 @@ or the [native integration guide](NATIVE.md). The [engine review](REVIEW-engine.
 records its findings and fixes; [the manual](USAGE.md) describes supported
 operations and limits.
 
-The pinned host integration has passed installed-relay acceptance covering
-parent, child, fork, restart and access revocation behavior. This is separate
-from the pure-engine test suite and does not establish compatibility with
-other runtime versions. WK1, macros and protected exports remain deferred.
+The 0.9.0 native adapter and MCP transport checks pass, but installed-host
+acceptance is incomplete. Child-mob cleanup refuses database observer drain,
+and a fresh-process restart/rebind aborts with a runtime worker stack overflow.
+Earlier development-host results do not qualify this runtime version. WK1,
+macros and protected exports remain deferred.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development and verification.
 
