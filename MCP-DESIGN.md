@@ -11,7 +11,7 @@ did not satisfy this delivery contract.
 ## Ownership
 
 The spreadsheet engine and all Botus-specific protocol code stay in this
-repository. MobKit owns the durable document service, identity resolution,
+repository. Meta owns the durable document service, identity resolution,
 lineage and current authorization. Meerkat owns the tool dispatch context and
 the normal MCP routing and execution lifecycle.
 
@@ -52,7 +52,7 @@ refuses before sending the call. Matching only a server's display name is
 insufficient.
 
 Profiles persist only a public launch descriptor with a stable binding marker
-and empty declared environment slots. MobKit reconstructs the exact current
+and empty declared environment slots. Meta reconstructs the exact current
 process binding at each build. Runtime endpoints and relay credentials never
 belong in durable profiles. Initial document bindings reject tool aliases so
 the dispatcher classification and retained native policy share canonical names.
@@ -73,7 +73,7 @@ Only the token and the defined origin projection cross the MCP boundary;
 arbitrary turn metadata and conversation content do not.
 
 The endpoint atomically consumes the token and verifies its request binding.
-It then invokes the existing dispatcher, whose MobKit resolver checks current
+It then invokes the existing dispatcher, whose Meta resolver checks current
 identity, ancestry, native policy and document access. A previously minted
 token cannot freeze an earlier grant. Arguments never establish caller
 identity, regardless of authority-like field names.

@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           dependency_tree="$(./scripts/repo-cargo tree --locked --no-default-features --edges normal --prefix none)"
-          if printf '%s\n' "$dependency_tree" | grep -E '^(meerkat|mobkit-extension-state|tokio)(-| )'; then
+          if printf '%s\n' "$dependency_tree" | grep -E '^(meerkat|meta-extension-state|tokio)(-| )'; then
             echo "Default engine unexpectedly includes runtime dependencies"
             exit 1
           fi
@@ -72,10 +72,10 @@ jobs:
         with:
           path: ${{ steps.cargo_paths.outputs.CARGO_TARGET_DIR }}
           key: ${{ runner.os }}-rust-1.97.0-native-target-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml', '.github/workflows/ci.yml') }}
-      - run: make check-mobkit
-      - run: make lint-mobkit
-      - run: make test-mobkit
-      - run: ./scripts/repo-cargo run --locked --example native_host --features mobkit
+      - run: make check-meta
+      - run: make lint-meta
+      - run: make test-meta
+      - run: ./scripts/repo-cargo run --locked --example native_host --features meta
       - run: make check-mcp
       - run: make lint-mcp
       - run: make test-installed-mcp

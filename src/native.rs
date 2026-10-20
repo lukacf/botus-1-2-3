@@ -1,4 +1,4 @@
-//! Optional MobKit tools. The host owns the filing cabinet; Botus owns F9.
+//! Optional Meta tools. The host owns the filing cabinet; Botus owns F9.
 //!
 //! A replay returns the original durable receipt, without recalculating a
 //! selection against newer state. Ask `botus_read` for a fresh selection.
@@ -13,7 +13,7 @@ use meerkat_core::{
     AgentToolDispatcher, ToolCallView, ToolDef, ToolDispatchContext, ToolDispatchOutcome,
     ToolError, ToolMutationClass, ToolProvenance, ToolResult, ToolSourceKind,
 };
-use meerkat_mobkit::extension_state::{
+use meerkat_meta::extension_state::{
     ToolBundleContext, ToolBundleFactory, ToolBundleRequirements, documents,
 };
 use serde::{Deserialize, Serialize};
@@ -141,7 +141,7 @@ pub struct ApplyResponse {
     pub selected: Option<ReadResult>,
 }
 
-/// Register explicitly with MobKit. A default core build does not include this.
+/// Register explicitly with Meta. A default core build does not include this.
 #[derive(Debug, Clone, Default)]
 pub struct BotusToolFactory {
     pub limits: Limits,
@@ -615,10 +615,7 @@ pub fn tool_definitions() -> Vec<ToolDef> {
                 "topic":{"enum":["overview","read","apply","operations","formulas","access","limits"]}
             }}),
         )
-        .with_provenance(ToolProvenance {
-            kind: ToolSourceKind::RustBundle,
-            source_id: NAMESPACE.into(),
-        }),
+        .with_provenance(ToolProvenance::new(ToolSourceKind::RustBundle, NAMESPACE)),
         ToolDef::new(
             "botus_apply",
             "Create, edit, share, transfer or delete a workbook. Use a unique request_id; retries return its receipt. All but create require id and current revision. Edits are atomic. select optionally returns result cells. Strings stay text; formulas use {formula:...}.",
@@ -630,10 +627,7 @@ pub fn tool_definitions() -> Vec<ToolDef> {
                 "select":selection
             }}),
         )
-        .with_provenance(ToolProvenance {
-            kind: ToolSourceKind::RustBundle,
-            source_id: NAMESPACE.into(),
-        }),
+        .with_provenance(ToolProvenance::new(ToolSourceKind::RustBundle, NAMESPACE)),
     ]
 }
 

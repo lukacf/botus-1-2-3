@@ -10,19 +10,19 @@ include = ["src/**", "examples/**", "tests/**", "skills/**", "plugin.json", "mcp
 
 [features]
 default = []
-mobkit = ["dep:async-trait", "dep:meerkat-core", "dep:meerkat-mobkit", "dep:tokio", "serde_json/raw_value"]
+meta = ["dep:async-trait", "dep:meerkat-core", "dep:meerkat-meta", "dep:tokio", "serde_json/raw_value"]
 mcp-host-tests = ["mcp", "dep:meerkat-client", "dep:meerkat-mob"]
-mcp = ["mobkit", "dep:meerkat-mcp", "dep:axum", "dep:futures", "dep:getrandom", "dep:rmcp", "dep:reqwest", "dep:sse-stream", "dep:subtle", "dep:tokio-util"]
+mcp = ["meta", "dep:meerkat-mcp", "dep:axum", "dep:futures", "dep:getrandom", "dep:rmcp", "dep:reqwest", "dep:sse-stream", "dep:subtle", "dep:tokio-util"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 async-trait = { version = "0.1", optional = true }
-meerkat-core = { version = "=0.8.52", optional = true }
-meerkat-mcp = { version = "=0.8.52", optional = true }
-meerkat-client = { version = "=0.8.52", optional = true }
-meerkat-mob = { version = "=0.8.52", optional = true }
-meerkat-mobkit = { git = "https://github.com/lukacf/meerkat-mobkit", rev = "f27d6630f0b2ddd42317b1d205ffe2a93c4f233b", features = ["extension-state"], optional = true }
+meerkat-core = { version = "=0.9.3", optional = true }
+meerkat-mcp = { version = "=0.9.3", optional = true }
+meerkat-client = { version = "=0.9.3", optional = true }
+meerkat-mob = { version = "=0.9.3", optional = true }
+meerkat-meta = { version = "=0.9.3", features = ["extension-state"], optional = true }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"], optional = true }
 axum = { version = "0.8", optional = true }
 futures = { version = "0.3", optional = true }
@@ -42,7 +42,7 @@ tracing-subscriber = { version = "0.3", default-features = false, features = ["f
 
 [[example]]
 name = "native_host"
-required-features = ["mobkit"]
+required-features = ["meta"]
 
 [[example]]
 name = "mcp_host"

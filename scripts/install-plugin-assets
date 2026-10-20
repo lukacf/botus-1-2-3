@@ -24,7 +24,7 @@ def main():
     shutil.copytree(root / "skills", destination / "skills")
     print(f"Plugin assets installed at {destination}")
     print("The botus-1-2-3 executable must be on the host's PATH.")
-    print("Configure the MobKit document backend and trusted MCP caller binding.")
+    print("Configure the Meta document backend and trusted MCP caller binding.")
 
 
 if __name__ == "__main__":

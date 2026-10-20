@@ -1,7 +1,7 @@
 #![cfg(feature = "mcp-host-tests")]
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 //! Full host acceptance: model loop -> native router -> stdio relay -> HTTP
-//! MCP -> MobKit's current identity and durable document authority. No fixture
+//! MCP -> Meta's current identity and durable document authority. No fixture
 //! caller resolver, caller token, or direct document mutation is used here.
 
 #[path = "support/relay_binary.rs"]
@@ -20,17 +20,17 @@ use meerkat_core::{
     types::{ContentInput, HandlingMode, StopReason, SystemNoticeKind, ToolCallView, ToolResult},
 };
 use meerkat_mcp::{McpCallContext, McpCallContextError, McpCallContextProvider, McpCallTarget};
-use meerkat_mob::{
-    AgentIdentity, MemberCreationProvenance, MobDefinition, MobHandle, ProfileBinding, ProfileName,
-    SpawnMemberSpec,
-};
-use meerkat_mobkit::{
+use meerkat_meta::{
     MobTerminalShutdownOutcome, UnifiedRuntime, UnifiedRuntimeShutdownReport,
     extension_state::{
         ChildMcpAvailability, HostMcpDocumentBinding,
         documents::{Audience, DocumentAccess, Grant, Owner, Principal, Reach, Role},
     },
     mob_composition_manifest::persistent_mob_storage,
+};
+use meerkat_mob::{
+    AgentIdentity, MemberCreationProvenance, MobDefinition, MobHandle, ProfileBinding, ProfileName,
+    SpawnMemberSpec,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -463,7 +463,7 @@ impl McpCallContextProvider for ObservedProvider {
         McpCallContextProvider::prepare(&self.inner, target, call, context).await
     }
     // Deliberately retain the default Unknown classification: the validated
-    // MobKit document requirements, not this wrapper, classify the tools.
+    // Meta document requirements, not this wrapper, classify the tools.
 }
 
 struct Host {
@@ -959,16 +959,20 @@ async fn child_supply_and_copied_host_only_descriptor_body() {
             assert_eq!(member_id, "helper");
             assert_ne!(helper, owner);
         } else {
+            // The delegate completes after the model handles its refused tool
+            // call. Check the helper's actual refusal, not orchestration status.
+            success(delegation);
+            let helper_result = host.client.result(&delegated).await;
             assert!(
-                delegation.is_error,
+                helper_result.is_error,
                 "HostOnly must not be supplied to implicit delegates"
             );
             assert!(
-                delegation
+                helper_result
                     .text_content()
                     .contains("Tool not found: botus_read"),
                 "delegate failed for a different reason: {}",
-                delegation.text_content()
+                helper_result.text_content()
             );
             let plans = host.client.plans.lock().unwrap();
             let helper = &plans[&delegated];

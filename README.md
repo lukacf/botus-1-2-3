@@ -17,15 +17,24 @@ copying, sorting and bounded reads.
 ## Status and installation
 
 Botus is available from source under **MIT OR Apache-2.0**, at your option.
-It is not published to a package registry. The default Rust build provides
+The default Rust build provides
 the standalone spreadsheet engine; the optional `mcp` feature adds the MCP
 server and host integration.
 
-The validated host integration uses Meerkat **0.8.52** and the exact MobKit
-revision in [Cargo.toml](Cargo.toml). Use that same dependency set in the
-host. The upstream storage and MCP support also ships in Meerkat Meta 0.9,
-but this Botus package has not yet been qualified against that version.
+Botus targets **Meerkat 0.9.x**. The host integration pins the published
+Meerkat **0.9.3** and Meerkat Meta **0.9.3** crates in
+[Cargo.toml](Cargo.toml). Use that same dependency set in the host.
+The optional `meta` feature provides native tool registration; `mcp` includes
+it and adds the stdio MCP relay. No 0.8 runtime or Git dependency is required.
 
+Install the relay from crates.io:
+
+```sh
+cargo install botus-1-2-3 --version 0.1.0 --locked --features mcp
+```
+
+The [0.1.0 release](https://github.com/lukacf/botus-1-2-3/releases/tag/v0.1.0)
+includes the portable plugin and complete skill bundle.
 For installation and host setup, follow [MCP.md](MCP.md). Agents need a
 configured host for persistent storage and authenticated access; the skill
 and executable alone do not provide those services.
@@ -63,7 +72,7 @@ python3 scripts/install-plugin-assets /your/plugin-directory/botus-1-2-3
 
 This copies public package assets only. The executable must also be installed
 on the host's PATH. The manifest does not supply a storage backend or caller
-authority: the host must bind its MobKit services and trusted per-call MCP
+authority: the host must bind its Meta services and trusted per-call MCP
 context. A skill describes how to use the tools; installing it does not
 activate them. Host setup and wire-level acceptance remain separate from
 asset installation.
@@ -72,7 +81,7 @@ asset installation.
 
 1. Put structured data in a workbook.
 2. Calculate, filter and share it with authorized agents.
-3. Persist through MobKit.
+3. Persist through Meta.
 
 Two agent tools, `botus_read` and `botus_apply`, serve the whole workspace.
 Bulk operations and bounded responses keep tool calls and context use small.
@@ -85,7 +94,7 @@ ownership.
 Owners can explicitly share with children, other agents or a mob. Realm
 ownership does not imply that every agent can read the document.
 
-MobKit supplies persistence and enforces access through its document store.
+Meta supplies persistence and enforces access through its document store.
 The engine itself remains independent of the agent runtime.
 
 ## Compatibility
@@ -109,10 +118,11 @@ or the [native integration guide](NATIVE.md). The [engine review](REVIEW-engine.
 records its findings and fixes; [the manual](USAGE.md) describes supported
 operations and limits.
 
-The pinned host integration has passed installed-relay acceptance covering
-parent, child, fork, restart and access revocation behavior. This is separate
-from the pure-engine test suite and does not establish compatibility with
-other runtime versions. WK1, macros and protected exports remain deferred.
+Host acceptance covers child cleanup, parent and fork identity, sharing,
+read-only enforcement, revocation and separate-process restart. Run
+`make test-installed-mcp` against the pinned runtime pair. Earlier 0.9.0
+qualification failures remain separate from the 0.9.3 results.
+WK1, macros and protected exports remain deferred.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development and verification.
 

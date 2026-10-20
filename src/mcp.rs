@@ -1,6 +1,6 @@
 //! Real MCP transport for a host-owned Botus document service.
 //!
-//! The listener and call capability registry live inside the MobKit host. The
+//! The listener and call capability registry live inside the Meta host. The
 //! stdio executable is only a relay: its credential authenticates that relay,
 //! never an agent. Every tool call also needs a short-lived, one-use capability
 //! issued from the trusted runtime dispatch context for the exact destination,
@@ -27,7 +27,7 @@ use meerkat_core::{
     ToolMutationClass, WireCallOrigin,
 };
 use meerkat_mcp::{McpCallContext, McpCallContextError, McpCallContextProvider, McpCallTarget};
-use meerkat_mobkit::extension_state::{
+use meerkat_meta::extension_state::{
     ChildMcpAvailability, HostMcpDocumentBinding, ToolBundleContext, ToolBundleFactory,
 };
 use rmcp::{
@@ -191,7 +191,7 @@ impl std::fmt::Debug for BotusMcpListener {
 impl BotusMcpListener {
     /// Register the host service without persisting this process's endpoint
     /// or relay credential. Profiles select the returned public descriptor;
-    /// MobKit resolves its declared environment slots at each agent build.
+    /// Meta resolves its declared environment slots at each agent build.
     /// Child availability exposes the tools, never a workbook access grant.
     pub fn document_binding(
         &self,
@@ -221,7 +221,7 @@ impl BotusMcpListener {
 
     /// The host passes this configuration directly to its MCP router. Do not
     /// put the resulting environment map in profiles, prompts, logs or source
-    /// control. Prefer `document_binding` for automatic MobKit composition.
+    /// control. Prefer `document_binding` for automatic Meta composition.
     pub fn relay_config(&self, command: impl Into<String>) -> McpServerConfig {
         McpServerConfig::stdio(
             "botus-1-2-3",
