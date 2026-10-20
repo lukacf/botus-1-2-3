@@ -17,7 +17,7 @@ copying, sorting and bounded reads.
 ## Status and installation
 
 Botus is available from source under **MIT OR Apache-2.0**, at your option.
-It is not published to a package registry. The default Rust build provides
+The default Rust build provides
 the standalone spreadsheet engine; the optional `mcp` feature adds the MCP
 server and host integration.
 
@@ -27,6 +27,14 @@ Meerkat **0.9.3** and Meerkat Meta **0.9.3** crates in
 The optional `meta` feature provides native tool registration; `mcp` includes
 it and adds the stdio MCP relay. No 0.8 runtime or Git dependency is required.
 
+Install the relay from crates.io:
+
+```sh
+cargo install botus-1-2-3 --version 0.1.0 --locked --features mcp
+```
+
+The [0.1.0 release](https://github.com/lukacf/botus-1-2-3/releases/tag/v0.1.0)
+includes the portable plugin and complete skill bundle.
 For installation and host setup, follow [MCP.md](MCP.md). Agents need a
 configured host for persistent storage and authenticated access; the skill
 and executable alone do not provide those services.
@@ -110,9 +118,10 @@ or the [native integration guide](NATIVE.md). The [engine review](REVIEW-engine.
 records its findings and fixes; [the manual](USAGE.md) describes supported
 operations and limits.
 
-Installed-host acceptance is being qualified against the pinned 0.9.3 pair.
-Earlier 0.9.0 qualification found upstream child-mob cleanup and restart
-stack failures; those failed receipts remain separate from this version.
+Host acceptance covers child cleanup, parent and fork identity, sharing,
+read-only enforcement, revocation and separate-process restart. Run
+`make test-installed-mcp` against the pinned runtime pair. Earlier 0.9.0
+qualification failures remain separate from the 0.9.3 results.
 WK1, macros and protected exports remain deferred.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development and verification.

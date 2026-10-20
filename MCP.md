@@ -5,7 +5,7 @@ The spreadsheet engine, MCP relay and agent manual live in this package.
 Meta owns workbook persistence and current agent access. There is no
 second Botus database.
 
-This package is not published to a package registry. Integration uses the
+Integration uses the
 published Meerkat `=0.9.3` and `meerkat-meta =0.9.3` crates with
 `extension-state`. The host and Botus must use the same native and Meta
 versions so their runtime types agree. `Cargo.toml` records the
@@ -19,7 +19,17 @@ any existing development stores intact.
 
 ## Install the package
 
-Build and install the executable from this repository:
+Install the executable from crates.io, then unpack the plugin archive from
+the [0.1.0 release](https://github.com/lukacf/botus-1-2-3/releases/tag/v0.1.0)
+into a new plugin directory:
+
+```sh
+cargo install botus-1-2-3 --version 0.1.0 --locked --features mcp
+```
+
+The archive contains `plugin.json`, `mcp.json` and the complete `skills/`
+directory. The executable must be on the host's PATH. For a source checkout,
+install both parts with:
 
 ```sh
 ./scripts/repo-cargo install --locked --path . --features mcp
