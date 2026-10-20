@@ -587,6 +587,6 @@ async fn endpoint_trace_process_fixture() -> TestResult {
     assert!(!logs.contains(&token));
     assert!(!logs.contains(credential));
     fixture.listener.shutdown().await?;
-    println!("BOTUS_TRACE_PROBE_OK={challenge}");
+    println!("\nBOTUS_TRACE_PROBE_OK={challenge}");
     Ok(())
 }
