@@ -3,7 +3,7 @@
 The optional `meta` feature supplies exactly two tools: `botus_read` and
 `botus_apply`. The default crate uses only Serde and Serde JSON. This package
 is not published to a package registry. Native integration uses the published
-Meerkat `=0.9.0` and `meerkat-meta =0.9.0` crates with `extension-state`.
+Meerkat `=0.9.3` and `meerkat-meta =0.9.3` crates with `extension-state`.
 
 Use the same native and Meta versions as
 [Cargo.toml](Cargo.toml) in the consuming host so their runtime types agree.
@@ -205,11 +205,11 @@ retiring them leaves the workbook intact. Restart lineage requires the
 host's retained native mob journal and creation history. Durable workbook
 storage alone cannot restore a missing agent or prove its authority.
 
-Meta 0.9.0 has an upstream child-mob destruction limitation: the destroyed
-child's store and process resources can remain resident, and a still-live
-former owner can create a new document owned by that destroyed mob. Do not
-use mob destruction as a substitute for workbook deletion or access-policy
-changes. Botus does not override the host's lifecycle authority.
+The host controls child-mob destruction and storage cleanup. Destroyed mobs
+cannot supply document authority. A retained external child handle can make
+cleanup return incomplete; release that handle and retry through the same
+host authority. Workbook deletion and access-policy changes remain explicit
+operations. Botus does not override the host's lifecycle authority.
 
 Fork access uses the current document ACL and the last persisted effective
 native policies of the exact source and executing sessions. The factory

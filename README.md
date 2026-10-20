@@ -22,7 +22,7 @@ the standalone spreadsheet engine; the optional `mcp` feature adds the MCP
 server and host integration.
 
 Botus targets **Meerkat 0.9.x**. The host integration pins the published
-Meerkat **0.9.0** and Meerkat Meta **0.9.0** crates in
+Meerkat **0.9.3** and Meerkat Meta **0.9.3** crates in
 [Cargo.toml](Cargo.toml). Use that same dependency set in the host.
 The optional `meta` feature provides native tool registration; `mcp` includes
 it and adds the stdio MCP relay. No 0.8 runtime or Git dependency is required.
@@ -110,11 +110,10 @@ or the [native integration guide](NATIVE.md). The [engine review](REVIEW-engine.
 records its findings and fixes; [the manual](USAGE.md) describes supported
 operations and limits.
 
-The 0.9.0 native adapter and MCP transport checks pass, but installed-host
-acceptance is incomplete. Child-mob cleanup refuses database observer drain,
-and a fresh-process restart/rebind aborts with a runtime worker stack overflow.
-Earlier development-host results do not qualify this runtime version. WK1,
-macros and protected exports remain deferred.
+Installed-host acceptance is being qualified against the pinned 0.9.3 pair.
+Earlier 0.9.0 qualification found upstream child-mob cleanup and restart
+stack failures; those failed receipts remain separate from this version.
+WK1, macros and protected exports remain deferred.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development and verification.
 
