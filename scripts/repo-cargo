@@ -2,10 +2,16 @@
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "${script_dir}/.." && git rev-parse --show-toplevel)"
+repo_root="$(cd "${script_dir}/.." && pwd)"
 workspace_root="${repo_root}/."
-git_common_dir="$(cd "${repo_root}" && git rev-parse --path-format=absolute --git-common-dir)"
-worktree_root="$(cd "${repo_root}" && git rev-parse --path-format=absolute --show-toplevel)"
+worktree_root="${repo_root}"
+# Published crates and source archives do not contain Git metadata. Their
+# own source root is still a stable isolation key, even inside another repo.
+if [[ "$(git -C "${repo_root}" rev-parse --show-toplevel 2>/dev/null || true)" == "${repo_root}" ]]; then
+  git_common_dir="$(git -C "${repo_root}" rev-parse --path-format=absolute --git-common-dir)"
+else
+  git_common_dir="${repo_root}"
+fi
 
 hash_path() {
   printf '%s' "$1" | shasum | cut -c1-10
