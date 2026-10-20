@@ -474,6 +474,43 @@ impl std::io::Write for TraceBuffer {
 
 #[tokio::test(flavor = "current_thread")]
 async fn endpoint_trace_logs_never_render_live_capabilities_or_relay_credentials() -> TestResult {
+    let challenge = SessionId::new().to_string();
+    let output = tokio::time::timeout(
+        Duration::from_secs(30),
+        tokio::process::Command::new(std::env::current_exe()?)
+            .args([
+                "--exact",
+                "endpoint_trace_process_fixture",
+                "--ignored",
+                "--nocapture",
+                "--test-threads=1",
+            ])
+            .env("BOTUS_TRACE_PROBE_CHALLENGE", &challenge)
+            .kill_on_drop(true)
+            .output(),
+    )
+    .await??;
+    assert!(
+        output.status.success(),
+        "isolated trace probe failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let completion = format!("BOTUS_TRACE_PROBE_OK={challenge}");
+    assert!(
+        String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .any(|line| line == completion),
+        "trace probe did not complete its assertions"
+    );
+    Ok(())
+}
+
+// A process-wide subscriber covers spawned server tasks without competing
+// with other integration tests' dispatchers or callsite interest caches.
+#[tokio::test(flavor = "current_thread")]
+#[ignore = "launched in an isolated process by the trace acceptance test"]
+async fn endpoint_trace_process_fixture() -> TestResult {
+    let challenge = std::env::var("BOTUS_TRACE_PROBE_CHALLENGE")?;
     let buffer = TraceBuffer::default();
     let writer = buffer.clone();
     let subscriber = tracing_subscriber::fmt()
@@ -481,7 +518,7 @@ async fn endpoint_trace_logs_never_render_live_capabilities_or_relay_credentials
         .without_time()
         .with_writer(move || writer.clone())
         .finish();
-    let _tracing = tracing::subscriber::set_default(subscriber);
+    tracing::subscriber::set_global_default(subscriber)?;
     let directory = tempfile::tempdir()?;
     let fixture = Fixture::new(&directory.path().join("host.sqlite3")).await?;
     let McpTransportConfig::Stdio(config) = &fixture.config.transport else {
@@ -550,5 +587,6 @@ async fn endpoint_trace_logs_never_render_live_capabilities_or_relay_credentials
     assert!(!logs.contains(&token));
     assert!(!logs.contains(credential));
     fixture.listener.shutdown().await?;
+    println!("BOTUS_TRACE_PROBE_OK={challenge}");
     Ok(())
 }
