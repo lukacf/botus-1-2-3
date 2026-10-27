@@ -6,7 +6,7 @@ Meta owns workbook persistence and current agent access. There is no
 second Botus database.
 
 Integration uses the
-published Meerkat `=0.9.3` and `meerkat-meta =0.9.3` crates with
+published Meerkat `=0.9.5` and `meerkat-meta =0.9.5` crates with
 `extension-state`. The host and Botus must use the same native and Meta
 versions so their runtime types agree. `Cargo.toml` records the
 selections; the coordinated `Cargo.lock` is required for locked installation.
@@ -19,22 +19,20 @@ any existing development stores intact.
 
 ## Install the package
 
-Install the executable from crates.io, then unpack the plugin archive from
-the [0.1.0 release](https://github.com/lukacf/botus-1-2-3/releases/tag/v0.1.0)
-into a new plugin directory:
-
-```sh
-cargo install botus-1-2-3 --version 0.1.0 --locked --features mcp
-```
-
-The archive contains `plugin.json`, `mcp.json` and the complete `skills/`
-directory. The executable must be on the host's PATH. For a source checkout,
-install both parts with:
+Install the executable and plugin assets for Core/Meta 0.9.5 from this
+source checkout:
 
 ```sh
 ./scripts/repo-cargo install --locked --path . --features mcp
 python3 scripts/install-plugin-assets /your/plugin-directory/botus-1-2-3
 ```
+
+The published Botus 0.1.0 crate and its
+[release bundle](https://github.com/lukacf/botus-1-2-3/releases/tag/v0.1.0)
+target Core/Meta 0.9.3.
+
+The package contains `plugin.json`, `mcp.json` and the complete `skills/`
+directory. The executable must be on the host's PATH.
 
 No changes to `AUTOEXEC.BAT` are required.
 
