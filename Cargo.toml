@@ -18,11 +18,11 @@ mcp = ["meta", "dep:meerkat-mcp", "dep:axum", "dep:futures", "dep:getrandom", "d
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 async-trait = { version = "0.1", optional = true }
-meerkat-core = { version = "=0.9.3", optional = true }
-meerkat-mcp = { version = "=0.9.3", optional = true }
-meerkat-client = { version = "=0.9.3", optional = true }
-meerkat-mob = { version = "=0.9.3", optional = true }
-meerkat-meta = { version = "=0.9.3", features = ["extension-state"], optional = true }
+meerkat-core = { version = "=0.9.5", optional = true }
+meerkat-mcp = { version = "=0.9.5", optional = true }
+meerkat-client = { version = "=0.9.5", optional = true }
+meerkat-mob = { version = "=0.9.5", optional = true }
+meerkat-meta = { version = "=0.9.5", features = ["extension-state"], optional = true }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"], optional = true }
 axum = { version = "0.8", optional = true }
 futures = { version = "0.3", optional = true }

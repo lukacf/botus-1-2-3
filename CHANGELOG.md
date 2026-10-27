@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Update the optional host integration to published Core 0.9.5 and Meta 0.9.5.
+- Distinguish current-source installation from the 0.9.3-based Botus 0.1.0 release.
+
 ## 0.1.0
 
 - Two MCP tools, `botus_read` and `botus_apply`, with optional native registration.
