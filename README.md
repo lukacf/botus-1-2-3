@@ -22,12 +22,12 @@ the standalone spreadsheet engine; the optional `mcp` feature adds the MCP
 server and host integration.
 
 Botus targets **Meerkat 0.9.x**. The host integration pins the published
-Meerkat **0.9.5** and Meerkat Meta **0.9.5** crates in
+Meerkat **0.9.14** and Meerkat Meta **0.9.14** crates in
 [Cargo.toml](Cargo.toml). Use that same dependency set in the host.
 The optional `meta` feature provides native tool registration; `mcp` includes
 it and adds the stdio MCP relay. No 0.8 runtime or Git dependency is required.
 
-Install the relay for Core/Meta 0.9.5 from this source checkout:
+Install the relay for Core/Meta 0.9.14 from this source checkout:
 
 ```sh
 ./scripts/repo-cargo install --path . --locked --features mcp
@@ -35,7 +35,7 @@ Install the relay for Core/Meta 0.9.5 from this source checkout:
 
 The published Botus **0.1.0** crate targets Core and Meta **0.9.3**. Its
 crates.io installation and release bundle continue to use that dependency set.
-The 0.9.5 integration is available from current source.
+The 0.9.14 integration is available from current source.
 
 The [0.1.0 release](https://github.com/lukacf/botus-1-2-3/releases/tag/v0.1.0)
 includes the portable plugin and complete skill bundle.
