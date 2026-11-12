@@ -2,14 +2,14 @@
 
 The optional `meta` feature supplies exactly two tools: `botus_read` and
 `botus_apply`. The default crate uses only Serde and Serde JSON. Native integration uses the published
-Meerkat `=0.9.5` and `meerkat-meta =0.9.5` crates with `extension-state`.
+Meerkat `=0.9.14` and `meerkat-meta =0.9.14` crates with `extension-state`.
 
 Use the same native and Meta versions as
 [Cargo.toml](Cargo.toml) in the consuming host so their runtime types agree.
 The coordinated `Cargo.lock` must resolve that dependency set. The consuming
 application does not need a native Git patch table.
 
-For the 0.9.5 integration, add this source checkout to the host. Adjust the
+For the 0.9.14 integration, add this source checkout to the host. Adjust the
 path to the checkout; the published Botus 0.1.0 crate uses Core/Meta 0.9.3:
 
 ```toml

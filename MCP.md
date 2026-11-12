@@ -6,7 +6,7 @@ Meta owns workbook persistence and current agent access. There is no
 second Botus database.
 
 Integration uses the
-published Meerkat `=0.9.5` and `meerkat-meta =0.9.5` crates with
+published Meerkat `=0.9.14` and `meerkat-meta =0.9.14` crates with
 `extension-state`. The host and Botus must use the same native and Meta
 versions so their runtime types agree. `Cargo.toml` records the
 selections; the coordinated `Cargo.lock` is required for locked installation.
@@ -19,7 +19,7 @@ any existing development stores intact.
 
 ## Install the package
 
-Install the executable and plugin assets for Core/Meta 0.9.5 from this
+Install the executable and plugin assets for Core/Meta 0.9.14 from this
 source checkout:
 
 ```sh
