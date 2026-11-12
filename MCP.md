@@ -19,17 +19,22 @@ any existing development stores intact.
 
 ## Install the package
 
-Install the executable and plugin assets for Core/Meta 0.9.14 from this
-source checkout:
+Install the executable for Core/Meta 0.9.14 with Rust 1.97 or later:
+
+```sh
+cargo install botus-1-2-3 --version 0.1.1 --locked --features mcp
+```
+
+Unpack the [0.1.1 plugin archive](https://github.com/lukacf/botus-1-2-3/releases/tag/v0.1.1)
+into a new plugin directory. From a source checkout, the equivalent commands are:
 
 ```sh
 ./scripts/repo-cargo install --locked --path . --features mcp
 python3 scripts/install-plugin-assets /your/plugin-directory/botus-1-2-3
 ```
 
-The published Botus 0.1.0 crate and its
-[release bundle](https://github.com/lukacf/botus-1-2-3/releases/tag/v0.1.0)
-target Core/Meta 0.9.3.
+Botus 0.1.0 retains its original Core/Meta 0.9.3 dependencies. Botus 0.1.1
+and its host must both use Core/Meta 0.9.14.
 
 The package contains `plugin.json`, `mcp.json` and the complete `skills/`
 directory. The executable must be on the host's PATH.
