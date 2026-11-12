@@ -16,7 +16,8 @@ copying, sorting and bounded reads.
 
 ## Status and installation
 
-Botus is available from source under **MIT OR Apache-2.0**, at your option.
+Botus is available on [crates.io](https://crates.io/crates/botus-1-2-3)
+under **MIT OR Apache-2.0**, at your option. Rust 1.97 or later is required.
 The default Rust build provides
 the standalone spreadsheet engine; the optional `mcp` feature adds the MCP
 server and host integration.
@@ -27,21 +28,23 @@ Meerkat **0.9.14** and Meerkat Meta **0.9.14** crates in
 The optional `meta` feature provides native tool registration; `mcp` includes
 it and adds the stdio MCP relay. No 0.8 runtime or Git dependency is required.
 
-Install the relay for Core/Meta 0.9.14 from this source checkout:
+Install the relay for Core/Meta 0.9.14:
 
 ```sh
-./scripts/repo-cargo install --path . --locked --features mcp
+cargo install botus-1-2-3 --version 0.1.1 --locked --features mcp
 ```
 
-The published Botus **0.1.0** crate targets Core and Meta **0.9.3**. Its
-crates.io installation and release bundle continue to use that dependency set.
-The 0.9.14 integration is available from current source.
+To install from this checkout instead, use
+`./scripts/repo-cargo install --path . --locked --features mcp`.
 
-The [0.1.0 release](https://github.com/lukacf/botus-1-2-3/releases/tag/v0.1.0)
+The [0.1.1 release](https://github.com/lukacf/botus-1-2-3/releases/tag/v0.1.1)
 includes the portable plugin and complete skill bundle.
 For installation and host setup, follow [MCP.md](MCP.md). Agents need a
 configured host for persistent storage and authenticated access; the skill
 and executable alone do not provide those services.
+
+Earlier Botus 0.1.0 installations retain their Core/Meta 0.9.3 dependencies.
+Upgrade the consuming host to the matching runtime pair when upgrading Botus.
 
 The companion [agent skill](skills/botus-1-2-3/SKILL.md) contains the complete
 functional reference, with separate chapters for

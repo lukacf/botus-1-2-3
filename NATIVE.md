@@ -9,12 +9,14 @@ Use the same native and Meta versions as
 The coordinated `Cargo.lock` must resolve that dependency set. The consuming
 application does not need a native Git patch table.
 
-For the 0.9.14 integration, add this source checkout to the host. Adjust the
-path to the checkout; the published Botus 0.1.0 crate uses Core/Meta 0.9.3:
+For the 0.9.14 integration, add Botus 0.1.1 to the host:
 
 ```toml
-botus-1-2-3 = { path = "../botus-1-2-3", features = ["meta"] }
+botus-1-2-3 = { version = "=0.1.1", features = ["meta"] }
 ```
+
+Botus 0.1.0 retains its original Core/Meta 0.9.3 dependencies. Upgrade the
+host and Botus together so their runtime types agree.
 
 ## Host registration
 
